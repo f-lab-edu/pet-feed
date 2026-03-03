@@ -1,0 +1,13 @@
+rootProject.name = 'pet-feed'
+
+// Shared 모듈 (공통 라이브러리)
+include 'shared:common-domain'
+include 'shared:common-security'
+include 'shared:common-infrastructure'
+
+// Services 모듈 (비즈니스 서비스)
+include 'services:user-service'
+include 'services:post-service'
+
+// Apps 모듈 (애플리케이션)
+include 'apps:api-gateway'

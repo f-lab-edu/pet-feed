@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // Common Domain
+    api project(':shared:common-domain')
+
+    // 나중에 필요한 인프라 의존성 추가
+    // Redis, S3, Kafka 등은 필요시 추가
+}

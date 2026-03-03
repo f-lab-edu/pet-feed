@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // Common Domain
+    api project(':shared:common-domain')
+
+    // Spring Security
+    api 'org.springframework.boot:spring-boot-starter-security'
+}

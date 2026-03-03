@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.0' apply false
+    id 'io.spring.dependency-management' version '1.1.4' apply false
+}
+
+allprojects {
+    group = 'com.pet-feed'
+    version = '0.0.1'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        sourceCompatibility = '24'
+        targetCompatibility = '24'
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    dependencies {
+        // Lombok
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+
+        // Jackson
+        implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+        // Test
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+}
+
+// Shared 모듈은 실행 불가 (라이브러리만 생성)
+configure(subprojects.findAll { it.path.startsWith(':shared') }) {
+    bootJar {
+        enabled = false
+    }
+    jar {
+        enabled = true
+    }
+}
+
+// Services와 Apps는 실행 가능한 애플리케이션
+configure(subprojects.findAll { it.path.startsWith(':services') || it.path.startsWith(':apps') }) {
+    apply plugin: 'org.springframework.boot'
+
+    bootJar {
+        enabled = true
+    }
+    jar {
+        enabled = false
+    }
+}

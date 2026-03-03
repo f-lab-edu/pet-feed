@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    // Shared 모듈
+    implementation project(':shared:common-domain')
+    implementation project(':shared:common-security')
+    implementation project(':shared:common-infrastructure')
+
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Database
+    runtimeOnly 'com.h2database:h2'
+}
