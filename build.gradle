@@ -46,17 +46,7 @@ subprojects {
     }
 }
 
-// Shared 모듈은 실행 불가 (라이브러리만 생성)
-configure(subprojects.findAll { it.path.startsWith(':shared') }) {
-    bootJar {
-        enabled = false
-    }
-    jar {
-        enabled = true
-    }
-}
-
-// Services와 Apps는 실행 가능한 애플리케이션
+// Services와 Apps는 실행 가능한 애플리케이션 (Spring Boot 플러그인 적용)
 configure(subprojects.findAll { it.path.startsWith(':services') || it.path.startsWith(':apps') }) {
     apply plugin: 'org.springframework.boot'
 
