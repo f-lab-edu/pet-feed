@@ -1,5 +1,4 @@
 plugins {
-    id 'java'
     id 'org.springframework.boot' version '3.2.0' apply false
     id 'io.spring.dependency-management' version '1.1.4' apply false
 }
@@ -14,63 +13,37 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: 'java'
-    apply plugin: 'io.spring.dependency-management'
+    pluginManager.withPlugin('java') {
+        apply plugin: 'io.spring.dependency-management'
 
-    dependencyManagement {
-        imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.0"
+        dependencyManagement {
+            imports {
+                mavenBom 'org.springframework.boot:spring-boot-dependencies:3.2.0'
+            }
+        }
+
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(17)
+            }
+        }
+
+        configurations {
+            compileOnly {
+                extendsFrom annotationProcessor
+            }
+        }
+
+        dependencies {
+            compileOnly 'org.projectlombok:lombok'
+            annotationProcessor 'org.projectlombok:lombok'
+
+            testImplementation 'org.springframework.boot:spring-boot-starter-test'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+
+        tasks.named('test') {
+            useJUnitPlatform()
         }
     }
-
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
-        }
-    }
-
-    configurations {
-        compileOnly {
-            extendsFrom annotationProcessor
-        }
-    }
-
-    dependencies {
-        // Lombok
-        compileOnly 'org.projectlombok:lombok'
-        annotationProcessor 'org.projectlombok:lombok'
-
-        // Jackson
-        implementation 'com.fasterxml.jackson.core:jackson-databind'
-
-        // Test
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    }
-
-    tasks.named('test') {
-        useJUnitPlatform()
-    }
-}
-
-// Services와 Apps는 실행 가능한 애플리케이션 (Spring Boot 플러그인 적용)
-configure([
-        project(':services:user-service'),
-        project(':services:post-service'),
-        project(':apps:api-gateway')
-]) {
-    apply plugin: 'org.springframework.boot'
-
-    dependencies {
-        implementation 'org.springframework.boot:spring-boot-starter'
-    }
-}
-
-configure([
-        project(':shared:common-domain'),
-        project(':shared:common-security'),
-        project(':shared:common-infrastructure')
-]) {
-    tasks.matching { it.name == 'bootJar' }.configureEach { enabled = false }
-    tasks.matching { it.name == 'jar' }.configureEach { enabled = true }
 }
