@@ -17,9 +17,16 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
 
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.0"
+        }
+    }
+
     java {
-        sourceCompatibility = '24'
-        targetCompatibility = '24'
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 
     configurations {
@@ -47,13 +54,23 @@ subprojects {
 }
 
 // Services와 Apps는 실행 가능한 애플리케이션 (Spring Boot 플러그인 적용)
-configure(subprojects.findAll { it.path.startsWith(':services') || it.path.startsWith(':apps') }) {
+configure([
+        project(':services:user-service'),
+        project(':services:post-service'),
+        project(':apps:api-gateway')
+]) {
     apply plugin: 'org.springframework.boot'
 
-    bootJar {
-        enabled = true
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter'
     }
-    jar {
-        enabled = false
-    }
+}
+
+configure([
+        project(':shared:common-domain'),
+        project(':shared:common-security'),
+        project(':shared:common-infrastructure')
+]) {
+    tasks.matching { it.name == 'bootJar' }.configureEach { enabled = false }
+    tasks.matching { it.name == 'jar' }.configureEach { enabled = true }
 }
