@@ -1,4 +1,22 @@
+pluginManagement {
+    includeBuild('build-logic')
+    repositories {
+        gradlePluginPortal()
+    }
+    plugins {
+        id 'org.springframework.boot' version '3.2.0'
+    }
+}
+
 rootProject.name = 'pet-feed'
+
+// 개별 의존성 주입 실패시 중앙 집권
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        mavenCentral()
+    }
+}
 
 // Shared 모듈 (공통 라이브러리)
 include ':common-domain'

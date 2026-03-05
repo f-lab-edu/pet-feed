@@ -1,7 +1,6 @@
 plugins {
     id 'base-spring.web'
-    id 'base-spring.data'
-    id 'base-spring.security'
+    id 'org.springframework.boot'
 }
 
 dependencies {
