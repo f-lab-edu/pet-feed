@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     // Common Domain
-    api project(':shared:common-domain')
+    api project(':common-domain')
 
     // Spring Security
     api 'org.springframework.boot:spring-boot-starter-security'

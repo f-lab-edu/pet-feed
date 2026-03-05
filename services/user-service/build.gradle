@@ -5,9 +5,9 @@ plugins {
 
 dependencies {
     // Shared 모듈
-    implementation project(':shared:common-domain')
-    implementation project(':shared:common-security')
-    implementation project(':shared:common-infrastructure')
+    implementation project(':common-domain')
+    implementation project(':common-security')
+    implementation project(':common-infrastructure')
 
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
