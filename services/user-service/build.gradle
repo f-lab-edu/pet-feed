@@ -1,6 +1,7 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot'
+    id 'base-spring.web'
+    id 'base-spring.data'
+    id 'base-spring.security'
 }
 
 dependencies {
@@ -8,12 +9,6 @@ dependencies {
     implementation project(':common-domain')
     implementation project(':common-security')
     implementation project(':common-infrastructure')
-
-    // Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // Database
     runtimeOnly 'com.h2database:h2'
