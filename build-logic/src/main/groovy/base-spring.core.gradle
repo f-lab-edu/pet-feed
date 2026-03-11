@@ -3,18 +3,18 @@ plugins {
     id 'io.spring.dependency-management'
 }
 
-group = 'com.pet-feed'
-version = '0.0.1'
+group = findProperty('projectGroup') ?: 'com.pet-feed'
+version = findProperty('projectVersion') ?: '0.0.1'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(findProperty('javaVersion') as Integer ?: 21)
     }
 }
 
 dependencyManagement {
     imports {
-        mavenBom 'org.springframework.boot:spring-boot-dependencies:3.2.0'
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${findProperty('springBootVersion') ?: '3.4.3'}"
     }
 }
 
