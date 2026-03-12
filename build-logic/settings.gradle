@@ -1,2 +1,9 @@
 rootProject.name = 'build-logic'
 
+// 루트 프로젝트의 gradle.properties 로드
+def rootProps = new Properties()
+file("${rootDir}/../gradle.properties").withInputStream { rootProps.load(it) }
+
+// ext에 저장하여 build.gradle에서 사용
+gradle.ext.springBootVersion = rootProps.getProperty('springBootVersion')
+gradle.ext.springDependencyManagementVersion = rootProps.getProperty('springDependencyManagementVersion')
