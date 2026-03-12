@@ -1,9 +1,8 @@
 plugins {
-    id 'java-library'
+    id 'base-spring.core'
 }
 
 dependencies {
-    // Common Domain
     api project(':common-domain')
 
     // 나중에 필요한 인프라 의존성 추가

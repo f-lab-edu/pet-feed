@@ -1,11 +1,7 @@
 plugins {
-    id 'java-library'
+    id 'base-spring.security'
 }
 
 dependencies {
-    // Common Domain
     api project(':common-domain')
-
-    // Spring Security
-    api 'org.springframework.boot:spring-boot-starter-security'
 }
