@@ -25,6 +25,8 @@ target/
 *.log
 logs/
 
+.claude/
+
 # Application
 application-local.yml
 application-dev.yml
