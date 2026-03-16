@@ -40,3 +40,6 @@ project(':post-service').projectDir = file('services/post-service')
 // Apps 모듈 (애플리케이션)
 include ':api-gateway'
 project(':api-gateway').projectDir = file('apps/api-gateway')
+
+include ':facade'
+project(':facade').projectDir = file('apps/facade')
