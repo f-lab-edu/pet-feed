@@ -3,15 +3,25 @@ plugins {
     id 'org.springframework.boot'
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2024.0.0"
+    }
+}
+
 dependencies {
     // Shared 모듈
     implementation project(':common-domain')
     implementation project(':common-infrastructure')
 
-    // Services 모듈 (Monolithic 배포)
-    implementation project(':user-service')
-    implementation project(':post-service')
-
     // Database
     runtimeOnly 'com.h2database:h2'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Feign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 }
