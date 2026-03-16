@@ -1,13 +1,11 @@
 plugins {
     id 'base-spring.web'
     id 'org.springframework.boot'
-    id 'base-spring.security'
 }
 
 dependencies {
     // Shared 모듈
     implementation project(':common-domain')
-    implementation project(':common-security')
     implementation project(':common-infrastructure')
 
     // Services 모듈 (Monolithic 배포)

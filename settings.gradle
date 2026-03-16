@@ -5,7 +5,12 @@ pluginManagement {
     }
     plugins {
         id 'org.springframework.boot' version "${springBootVersion}"
+        id 'org.gradle.toolchains.foojay-resolver-convention' version '0.9.0'
     }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention'
 }
 
 rootProject.name = 'pet-feed'
@@ -21,9 +26,6 @@ dependencyResolutionManagement {
 // Shared 모듈 (공통 라이브러리)
 include ':common-domain'
 project(':common-domain').projectDir = file('shared/common-domain')
-
-include ':common-security'
-project(':common-security').projectDir = file('shared/common-security')
 
 include ':common-infrastructure'
 project(':common-infrastructure').projectDir = file('shared/common-infrastructure')
