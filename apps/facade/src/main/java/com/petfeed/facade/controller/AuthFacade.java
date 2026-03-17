@@ -1,4 +1,4 @@
-package com.petfeed.facade;
+package com.petfeed.facade.controller;
 
 import com.petfeed.domain.dto.request.LoginRequest;
 import com.petfeed.domain.dto.response.LoginResponse;
