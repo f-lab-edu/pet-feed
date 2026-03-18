@@ -1,0 +1,10 @@
+plugins {
+    id 'base-spring.feign'
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation project(':common-domain')
+
+    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock'
+}

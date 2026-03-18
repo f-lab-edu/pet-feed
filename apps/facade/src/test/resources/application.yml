@@ -1,0 +1,5 @@
+services:
+  user-service:
+    url: http://localhost:${wiremock.server.port}
+  post-service:
+    url: http://localhost:${wiremock.server.port}

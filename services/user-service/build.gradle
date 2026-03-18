@@ -1,4 +1,5 @@
 plugins {
+    id 'base-spring.data'
     id 'base-spring.web'
     id 'org.springframework.boot'
 }
@@ -6,7 +7,6 @@ plugins {
 dependencies {
     // Shared 모듈
     implementation project(':common-domain')
-    implementation project(':common-security')
     implementation project(':common-infrastructure')
 
     // Database
