@@ -34,13 +34,15 @@ Content-Type: application/json
 
 ###
 
-### 팔로잉 on/off
-PATCH {{baseUrl}}/api/v1/following/{{userKey}}/
+### 팔로우
+# PATCH → POST/DELETE 분리: HttpURLConnection PATCH 미지원 + REST 시맨틱 명확화
+POST {{baseUrl}}/api/v1/following/{{userKey}}
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
 
-{
-  "isFollowing": true
-}
+###
+
+### 언팔로우
+DELETE {{baseUrl}}/api/v1/following/{{userKey}}
+Authorization: Bearer {{accessToken}}
 
 ###

@@ -1,9 +1,11 @@
 package com.petfeed.facade.controller;
 
-import com.petfeed.domain.dto.request.FollowRequest;
 import com.petfeed.domain.dto.request.SignupRequest;
 import com.petfeed.domain.dto.request.UpdateProfileRequest;
-import com.petfeed.domain.dto.response.*;
+import com.petfeed.domain.dto.response.PostListResponse;
+import com.petfeed.domain.dto.response.SignupResponse;
+import com.petfeed.domain.dto.response.UserListResponse;
+import com.petfeed.domain.dto.response.UserProfileResponse;
 import com.petfeed.facade.client.PostFeignClient;
 import com.petfeed.facade.client.UserFeignClient;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +52,12 @@ public class UserFacade {
         userFeignClient.updateProfile(userKey, request);
     }
 
-    public void follow(String targetUserKey, FollowRequest request) {
-        userFeignClient.follow(targetUserKey, request);
+    // PATCH → POST/DELETE 분리 (UserController 변경사유 동일)
+    public void follow(String targetUserKey) {
+        userFeignClient.follow(targetUserKey);
+    }
+
+    public void unfollow(String targetUserKey) {
+        userFeignClient.unfollow(targetUserKey);
     }
 }

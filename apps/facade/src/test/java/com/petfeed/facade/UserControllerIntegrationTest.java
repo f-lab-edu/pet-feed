@@ -1,6 +1,5 @@
 package com.petfeed.facade;
 
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,166 +7,257 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.http.*;
 
-import javax.annotation.Nonnull;
-
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Facade 통합테스트
- * <p>
- * 실제 서버를 띄우지 않고 WireMock이 user-service / post-service를 흉내냅니다.
- * <p>
- *   [Test] → Facade (실제 Spring Boot) → WireMock (가짜 user-service & post-service)
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWireMock(port = 0)  // 랜덤 포트로 WireMock 기동, ${wiremock.server.port}로 주입됨
+@AutoConfigureWireMock(port = 0)
 class UserControllerIntegrationTest {
 
     @Autowired
-    TestRestTemplate restTemplate;  // Facade 서버로 실제 HTTP 요청을 보내는 클라이언트
+    TestRestTemplate restTemplate;
+
+    private static final String USER_KEY = "test-user-key";
 
     @Test
     void signup_success() {
-        String body = """
-                {
-                  "userKey": "test-user-key",
-                  "createdAt": "2026-03-18T00:00:00"
-                }
-                """;
         stubFor(post(urlEqualTo("/api/v1/users/signup"))
-                .willReturn(getResult(body)));
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "userKey": "%s",
+                                  "createdAt": "2026-03-19T00:00:00"
+                                }
+                                """.formatted(USER_KEY))));
 
-        String requestBody = """
-                {
-                  "email": "test@petfeed.com",
-                  "password": "password123",
-                  "phone": "010-1234-5678",
-                  "nickname": "petlover"
-                }
-                """;
-
-        HttpHeaders headers = getHttpHeaders();
-
+        HttpHeaders headers = jsonHeaders();
         ResponseEntity<String> response = restTemplate.postForEntity(
                 "/api/v1/users/signup",
-                new HttpEntity<>(requestBody, headers),
+                new HttpEntity<>("""
+                        {
+                          "email": "test@petfeed.com",
+                          "password": "password123!",
+                          "phone": "010-1234-5678",
+                          "nickname": "petlover"
+                        }
+                        """, headers),
                 String.class
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("test-user-key");
-
-        // WireMock에 실제로 요청이 들어왔는지 검증
+        assertThat(response.getBody()).contains(USER_KEY);
         verify(postRequestedFor(urlEqualTo("/api/v1/users/signup")));
     }
 
     @Test
     void getProfile_success() {
-        String userKey = "test-user-key";
+        // user-service: 프로필 조회
+        stubFor(get(urlEqualTo("/api/v1/users/" + USER_KEY))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "nickname": "petlover",
+                                  "profileImageUrl": null,
+                                  "bio": "강아지 좋아",
+                                  "followerCount": 10,
+                                  "followingCount": 5,
+                                  "following": false
+                                }
+                                """)));
 
-        String body = """
-                {
-                  "nickname": "petlover",
-                  "profileImageUrl": null,
-                  "bio": "강아지 좋아",
-                  "followerCount": 10,
-                  "followingCount": 5,
-                  "following": false,
-                  "postCount": 0
-                }
-                """;
-        stubFor(get(urlEqualTo("/api/v1/users/" + userKey))
-                .willReturn(getResult(body)));
-
-        // post-service stub: getPostCount
-        stubFor(get(urlEqualTo("/api/v1/posts/count/" + userKey))
-                .willReturn(getResult("3")));
-
-        HttpHeaders headers = getHttpHeaders();
+        // post-service: postCount 조회 (UserFacade에서 조합)
+        stubFor(get(urlEqualTo("/api/v1/posts/count/" + USER_KEY))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("3")));
 
         ResponseEntity<String> response = restTemplate.exchange(
-                "/api/v1/users/" + userKey,
+                "/api/v1/users/" + USER_KEY,
                 HttpMethod.GET,
-                new HttpEntity<>(headers),
+                new HttpEntity<>(userKeyHeader()),
                 String.class
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("petlover");
+        assertThat(response.getBody()).contains("\"postCount\":3");
+        verify(getRequestedFor(urlEqualTo("/api/v1/users/" + USER_KEY)));
+        verify(getRequestedFor(urlEqualTo("/api/v1/posts/count/" + USER_KEY)));
     }
 
-    @Nonnull
-    private static HttpHeaders getHttpHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-User-Key", "requester-key");  // 인증 헤더 (Gateway가 주입하는 헤더)
-        return headers;
-    }
-
-    /**
-     * [E2E] signup → getProfile
-     * signup으로 받은 userKey로 프로필 조회까지 이어지는 흐름 검증
-     */
     @Test
-    void after_signup_then_getProfile_E2E() {
-
-        String body = """
-                {"userKey": "e2e-user-key", "createdAt": "2026-03-18T00:00:00"}
-                """;
-        stubFor(post(urlEqualTo("/api/v1/users/signup"))
-                .willReturn(getResult(body)));
-
-        String profileMock = """
-                                {
-                                  "nickname": "e2eUser",
-                                  "profileImageUrl": null,
-                                  "bio": null,
-                                  "followerCount": 0,
-                                  "followingCount": 0,
-                                  "following": false,
-                                  "postCount": 0
-                                }
-                                """;
-        stubFor(get(urlEqualTo("/api/v1/users/e2e-user-key"))
-                .willReturn(getResult(profileMock)));
-
-
-        stubFor(get(urlEqualTo("/api/v1/posts/count/e2e-user-key"))
+    void getPostsByUser_success() {
+        stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/posts"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("0")));
+                        .withBody("""
+                                {
+                                  "posts": [
+                                    {
+                                      "postId": 1,
+                                      "thumbnailUrl": "https://example.com/thumb.jpg",
+                                      "likeCount": 5,
+                                      "commentCount": 2,
+                                      "createdAt": "2026-03-19T00:00:00",
+                                      "updatedAt": "2026-03-19T00:00:00"
+                                    }
+                                  ],
+                                  "nextCursor": null,
+                                  "hasNext": false
+                                }
+                                """)));
 
-        HttpHeaders jsonHeaders = new HttpHeaders();
-        jsonHeaders.setContentType(MediaType.APPLICATION_JSON);
-
-        ResponseEntity<String> signupResponse = restTemplate.postForEntity(
-                "/api/v1/users/signup",
-                new HttpEntity<>("""
-                        {"email":"e2e@test.com","password":"pass","phone":"010-0000-0000","nickname":"e2eUser"}
-                        """, jsonHeaders),
-                String.class
-        );
-        assertThat(signupResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-        HttpHeaders profileHeaders = new HttpHeaders();
-        profileHeaders.set("X-User-Key", "e2e-user-key");
-
-        ResponseEntity<String> profileResponse = restTemplate.exchange(
-                "/api/v1/users/e2e-user-key",
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/v1/users/" + USER_KEY + "/posts",
                 HttpMethod.GET,
-                new HttpEntity<>(profileHeaders),
+                new HttpEntity<>(userKeyHeader()),
                 String.class
         );
-        assertThat(profileResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(profileResponse.getBody()).contains("e2eUser");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("thumbnailUrl");
+        verify(getRequestedFor(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/posts")));
     }
 
-    public static ResponseDefinitionBuilder getResult(String body) {
-        return aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(body);
+    @Test
+    void getFollowers_success() {
+        stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followers"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "users": [
+                                    {
+                                      "userKey": "follower-key",
+                                      "nickname": "follower1",
+                                      "profileImageUrl": null,
+                                      "following": false
+                                    }
+                                  ],
+                                  "nextCursor": null,
+                                  "hasNext": false
+                                }
+                                """)));
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/v1/users/" + USER_KEY + "/followers",
+                HttpMethod.GET,
+                new HttpEntity<>(userKeyHeader()),
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("follower-key");
+        verify(getRequestedFor(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followers")));
+    }
+
+    @Test
+    void getFollowings_success() {
+        stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followings"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "users": [
+                                    {
+                                      "userKey": "following-key",
+                                      "nickname": "following1",
+                                      "profileImageUrl": null,
+                                      "following": true
+                                    }
+                                  ],
+                                  "nextCursor": null,
+                                  "hasNext": false
+                                }
+                                """)));
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/v1/users/" + USER_KEY + "/followings",
+                HttpMethod.GET,
+                new HttpEntity<>(userKeyHeader()),
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("following-key");
+        verify(getRequestedFor(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followings")));
+    }
+
+    @Test
+    void updateProfile_success() {
+        stubFor(put(urlEqualTo("/api/v1/users/" + USER_KEY))
+                .willReturn(aResponse()
+                        .withStatus(204)));
+
+        HttpHeaders headers = jsonHeaders();
+        headers.set("X-User-Key", USER_KEY);
+        ResponseEntity<Void> response = restTemplate.exchange(
+                "/api/v1/users/" + USER_KEY,
+                HttpMethod.PUT,
+                new HttpEntity<>("""
+                        {
+                          "bio": "업데이트된 소개",
+                          "email": "updated@petfeed.com"
+                        }
+                        """, headers),
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(putRequestedFor(urlEqualTo("/api/v1/users/" + USER_KEY)));
+    }
+
+    @Test
+    void follow_success() {
+        stubFor(post(urlEqualTo("/api/v1/following/" + USER_KEY))
+                .willReturn(aResponse()
+                        .withStatus(200)));
+
+        ResponseEntity<Void> response = restTemplate.exchange(
+                "/api/v1/following/" + USER_KEY,
+                HttpMethod.POST,
+                new HttpEntity<>(userKeyHeader()),
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(postRequestedFor(urlEqualTo("/api/v1/following/" + USER_KEY)));
+    }
+
+    @Test
+    void unfollow_success() {
+        stubFor(delete(urlEqualTo("/api/v1/following/" + USER_KEY))
+                .willReturn(aResponse()
+                        .withStatus(200)));
+
+        ResponseEntity<Void> response = restTemplate.exchange(
+                "/api/v1/following/" + USER_KEY,
+                HttpMethod.DELETE,
+                new HttpEntity<>(userKeyHeader()),
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(deleteRequestedFor(urlEqualTo("/api/v1/following/" + USER_KEY)));
+    }
+
+    private HttpHeaders jsonHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
+    private HttpHeaders userKeyHeader() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-User-Key", "requester-key");
+        return headers;
     }
 }
