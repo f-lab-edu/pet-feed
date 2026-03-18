@@ -1,0 +1,46 @@
+### 프로필 조회
+GET {{baseUrl}}/api/v1/users/{{userKey}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 대상 게시글 조회
+GET {{baseUrl}}/api/v1/users/{{userKey}}/posts?page=0
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 팔로워 목록 조회
+GET {{baseUrl}}/api/v1/users/{{userKey}}/followers?page=0
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 팔로잉 목록 조회
+GET {{baseUrl}}/api/v1/users/{{userKey}}/followings?page=0
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 프로필 수정
+PUT {{baseUrl}}/api/v1/users/{{userKey}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "bio": "안녕하세요!",
+  "email": "updated@petfeed.com"
+}
+
+###
+
+### 팔로잉 on/off
+PATCH {{baseUrl}}/api/v1/following/{{userKey}}/
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isFollowing": true
+}
+
+###
