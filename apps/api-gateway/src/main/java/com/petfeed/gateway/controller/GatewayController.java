@@ -1,16 +1,17 @@
 package com.petfeed.gateway.controller;
 
+import com.petfeed.domain.exception.DownstreamException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
@@ -52,6 +53,18 @@ public class GatewayController {
                 .headers(h -> h.addAll(headers))
                 .body(body)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::propagateDownstreamError)
                 .toEntity(byte[].class);
     }
+
+    private void propagateDownstreamError(HttpRequest httpRequest, ClientHttpResponse clientHttpResponse) throws IOException {
+        byte[] body;
+        try {
+            body = clientHttpResponse.getBody().readAllBytes();
+        } catch (IOException e) {
+            body = new byte[0];
+        }
+        throw new DownstreamException(clientHttpResponse.getStatusCode().value(), body);
+    }
+
 }
