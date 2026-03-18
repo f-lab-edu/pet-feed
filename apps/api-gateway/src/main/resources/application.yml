@@ -7,6 +7,7 @@ server:
 
 jwt:
   secret: cGV0LWZlZWQtand0LXNlY3JldC1rZXktZm9yLXNpZ25pbmctbXVzdC1iZS0yNTYtYml0cw==
+#  pet-feed-jwt-secret-key-for-signing-must-be-256-bits
   expiration: 3600000
 
 services:

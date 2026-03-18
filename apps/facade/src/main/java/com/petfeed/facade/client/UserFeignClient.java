@@ -2,7 +2,9 @@ package com.petfeed.facade.client;
 
 import com.petfeed.domain.dto.request.FollowRequest;
 import com.petfeed.domain.dto.request.SignupRequest;
+import com.petfeed.domain.dto.request.UpdateProfileRequest;
 import com.petfeed.domain.dto.response.SignupResponse;
+import com.petfeed.domain.dto.response.UserListResponse;
 import com.petfeed.domain.dto.response.UserProfileResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,18 @@ public interface UserFeignClient {
 
     @GetMapping("/api/v1/users/{user-key}")
     UserProfileResponse getProfile(@PathVariable("user-key") String userKey);
+
+    @GetMapping("/api/v1/users/{user-key}/followers")
+    UserListResponse getFollowers(@PathVariable("user-key") String userKey,
+                                  @RequestParam(defaultValue = "0") Long cursor);
+
+    @GetMapping("/api/v1/users/{user-key}/followings")
+    UserListResponse getFollowings(@PathVariable("user-key") String userKey,
+                                   @RequestParam(defaultValue = "0") Long cursor);
+
+    @PutMapping("/api/v1/users/{user-key}")
+    void updateProfile(@PathVariable("user-key") String userKey,
+                       @RequestBody UpdateProfileRequest request);
 
     @PatchMapping("/api/v1/following/{user-key}")
     void follow(@PathVariable("user-key") String targetUserKey, @RequestBody FollowRequest request);

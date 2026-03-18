@@ -2,8 +2,8 @@ package com.petfeed.facade.controller;
 
 import com.petfeed.domain.dto.request.FollowRequest;
 import com.petfeed.domain.dto.request.SignupRequest;
-import com.petfeed.domain.dto.response.SignupResponse;
-import com.petfeed.domain.dto.response.UserProfileResponse;
+import com.petfeed.domain.dto.request.UpdateProfileRequest;
+import com.petfeed.domain.dto.response.*;
 import com.petfeed.facade.client.PostFeignClient;
 import com.petfeed.facade.client.UserFeignClient;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +32,22 @@ public class UserFacade {
                 profile.isFollowing(),
                 postCount
         );
+    }
+
+    public PostListResponse getPostsByUser(String userKey, Long cursor) {
+        return postFeignClient.getPostsByUser(userKey, cursor);
+    }
+
+    public UserListResponse getFollowers(String userKey, Long cursor) {
+        return userFeignClient.getFollowers(userKey, cursor);
+    }
+
+    public UserListResponse getFollowings(String userKey, Long cursor) {
+        return userFeignClient.getFollowings(userKey, cursor);
+    }
+
+    public void updateProfile(String userKey, UpdateProfileRequest request) {
+        userFeignClient.updateProfile(userKey, request);
     }
 
     public void follow(String targetUserKey, FollowRequest request) {
