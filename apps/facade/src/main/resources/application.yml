@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: facade-service
+
+server:
+  port: 8083
+
+services:
+  user-service:
+    url: http://localhost:8081
+  post-service:
+    url: http://localhost:8082

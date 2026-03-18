@@ -6,7 +6,6 @@ plugins {
 dependencies {
     implementation project(':common-domain')
     implementation project(':common-infrastructure')
-    implementation project(':facade')
 
     runtimeOnly 'com.h2database:h2'
 }
