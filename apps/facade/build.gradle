@@ -6,4 +6,6 @@ plugins {
 dependencies {
     implementation project(':common-domain')
     implementation project(':common-infrastructure')
+
+    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock'
 }
