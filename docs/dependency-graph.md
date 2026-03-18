@@ -4,8 +4,9 @@
 
 ```
 base-spring.core
-  └── base-spring.data   (+ spring-boot-starter-data-jpa)
-  └── base-spring.web    (+ spring-boot-starter-web, validation, security)
+  ├── base-spring.data      (+ spring-boot-starter-data-jpa)
+  ├── base-spring.security  (+ spring-boot-starter-security, spring-security-test)
+  └── base-spring.web       (+ spring-boot-starter-web, validation)
         └── base-spring.feign  (+ spring-cloud-starter-openfeign)
 ```
 
@@ -24,6 +25,7 @@ shared/common-infrastructure
 
 apps/api-gateway
   plugin : base-spring.web
+           base-spring.security  ← 게이트웨이만 Security 보유
            org.springframework.boot
   impl   : common-infrastructure
            common-domain
@@ -34,23 +36,25 @@ apps/facade
            org.springframework.boot
   impl   : common-domain
            common-infrastructure
-  ※ DB 없음
+  ※ DB 없음, Security 없음
 
 services/user-service
-  plugin : base-spring.data   ← JPA
+  plugin : base-spring.data
            base-spring.web
            org.springframework.boot
   impl   : common-domain
            common-infrastructure
   runtime: h2
+  ※ Security 없음
 
 services/post-service
-  plugin : base-spring.data   ← JPA
+  plugin : base-spring.data
            base-spring.web
            org.springframework.boot
   impl   : common-domain
            common-infrastructure
   runtime: h2
+  ※ Security 없음
 ```
 
 ## 전이 의존성 요약
@@ -60,6 +64,6 @@ services/post-service
 | common-domain | - | - | - | - |
 | common-infrastructure | - | - | - | ✓ |
 | api-gateway | ✓ | ✓ | - | ✓ |
-| facade | ✓ | ✓ | - | ✓ |
-| user-service | ✓ | ✓ | ✓ | ✓ |
-| post-service | ✓ | ✓ | ✓ | ✓ |
+| facade | ✓ | - | - | - |
+| user-service | ✓ | - | ✓ | - |
+| post-service | ✓ | - | ✓ | - |
