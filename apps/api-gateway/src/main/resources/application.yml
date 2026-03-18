@@ -10,5 +10,5 @@ jwt:
   expiration: 3600000
 
 services:
-  user-service:
-    url: http://localhost:8081
+  facade-service:
+    url: http://localhost:8083
