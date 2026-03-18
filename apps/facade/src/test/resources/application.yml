@@ -1,15 +1,3 @@
-spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-
-jwt:
-  secret: dGVzdC1zZWNyZXQta2V5LWZvci1wZXRmZWVkLXRlc3Q=  # test-secret-key-for-petfeed-test (32 bytes)
-  expiration: 3600000
-
 services:
   user-service:
     url: http://localhost:${wiremock.server.port}

@@ -100,6 +100,7 @@ class UserControllerIntegrationTest {
     @Nonnull
     private static HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-User-Key", "requester-key");  // 인증 헤더 (Gateway가 주입하는 헤더)
         return headers;
     }
