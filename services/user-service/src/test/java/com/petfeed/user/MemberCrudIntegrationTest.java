@@ -62,7 +62,14 @@ class MemberCrudIntegrationTest {
 
         mvc.perform(delete("/api/v1/users/{key}", key).header("X-User-Key", key))
                 .andExpect(status().isNoContent());
-        assertThat(members.findById(key)).isEmpty();
+        var withdrawn = members.findById(key).orElseThrow();
+        assertThat(withdrawn.getStatus()).isEqualTo(com.petfeed.domain.dto.response.MemberStatus.WITHDRAWN);
+        assertThat(withdrawn.getNickname()).isEqualTo("owner");
+        mvc.perform(get("/internal/v1/users/{key}/author", key))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("WITHDRAWN"))
+                .andExpect(jsonPath("$.displayName").value("(탈퇴한 회원)"))
+                .andExpect(jsonPath("$.email").doesNotExist());
         mvc.perform(get("/api/v1/users/{key}", key)).andExpect(status().isNotFound());
         loginStatus("new@example.com", "secret123!", 401);
         mvc.perform(delete("/api/v1/users/{key}", key).header("X-User-Key", key))

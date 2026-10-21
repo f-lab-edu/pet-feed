@@ -4,6 +4,7 @@ import com.petfeed.domain.dto.request.SignupRequest;
 import com.petfeed.domain.dto.request.LoginRequest;
 import com.petfeed.domain.dto.request.UpdateProfileRequest;
 import com.petfeed.domain.dto.response.LoginResponse;
+import com.petfeed.domain.dto.response.AuthorResponse;
 import com.petfeed.domain.dto.response.SignupResponse;
 import com.petfeed.domain.dto.response.UserProfileResponse;
 import com.petfeed.user.service.UserService;
@@ -19,6 +20,11 @@ import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
 public class UserController {
 
     private final UserService userService;
+
+    @GetMapping("/internal/v1/users/{user-key}/author")
+    public AuthorResponse getAuthor(@PathVariable("user-key") String userKey) {
+        return userService.getAuthor(userKey);
+    }
 
     @PostMapping("/api/v1/users/signup")
     @ResponseStatus(HttpStatus.CREATED)

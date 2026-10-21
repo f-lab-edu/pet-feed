@@ -4,10 +4,13 @@ import com.petfeed.domain.dto.request.SignupRequest;
 import com.petfeed.domain.dto.request.LoginRequest;
 import com.petfeed.domain.dto.request.UpdateProfileRequest;
 import com.petfeed.domain.dto.response.LoginResponse;
+import com.petfeed.domain.dto.response.AuthorResponse;
 import com.petfeed.domain.dto.response.SignupResponse;
 import com.petfeed.domain.dto.response.UserProfileResponse;
 
 public interface UserService {
+
+    AuthorResponse getAuthor(String userKey);
 
     SignupResponse signup(SignupRequest request);
 

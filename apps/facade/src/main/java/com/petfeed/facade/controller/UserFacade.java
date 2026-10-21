@@ -25,7 +25,7 @@ public class UserFacade {
     public UserProfileResponse getProfile(String userKey) {
         UserProfileResponse profile = userFeignClient.getProfile(userKey);
         long postCount = postFeignClient.getPostCount(userKey);
-        return new UserProfileResponse(
+        return UserProfileResponse.of(
                 profile.getNickname(),
                 profile.getProfileImageUrl(),
                 profile.getBio(),
@@ -37,7 +37,10 @@ public class UserFacade {
     }
 
     public PostListResponse getPostsByUser(String userKey, Long cursor) {
-        return postFeignClient.getPostsByUser(userKey, cursor);
+        var author = userFeignClient.getAuthor(userKey);
+        var posts = postFeignClient.getPostsByUser(userKey, cursor);
+        return PostListResponse.of(posts.getPosts().stream().map(post -> post.withAuthor(author)).toList(),
+                posts.getNextCursor(), posts.isHasNext());
     }
 
     public UserListResponse getFollowers(String userKey, Long cursor) {

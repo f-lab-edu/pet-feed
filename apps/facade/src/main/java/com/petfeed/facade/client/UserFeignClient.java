@@ -3,6 +3,7 @@ package com.petfeed.facade.client;
 import com.petfeed.domain.dto.request.SignupRequest;
 import com.petfeed.domain.dto.request.UpdateProfileRequest;
 import com.petfeed.domain.dto.response.SignupResponse;
+import com.petfeed.domain.dto.response.AuthorResponse;
 import com.petfeed.domain.dto.response.UserListResponse;
 import com.petfeed.domain.dto.response.UserProfileResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -12,6 +13,9 @@ import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
 
 @FeignClient(name = "user-service", url = "${services.user-service.url}")
 public interface UserFeignClient {
+
+    @GetMapping("/internal/v1/users/{user-key}/author")
+    AuthorResponse getAuthor(@PathVariable("user-key") String userKey);
 
     @PostMapping("/api/v1/users/signup")
     SignupResponse signup(@RequestBody SignupRequest request);

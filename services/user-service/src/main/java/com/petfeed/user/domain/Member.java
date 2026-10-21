@@ -1,6 +1,7 @@
 package com.petfeed.user.domain;
 
 import jakarta.persistence.*;
+import com.petfeed.domain.dto.response.MemberStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AccessLevel;
@@ -23,10 +24,17 @@ public class Member {
     @Column(nullable = false)
     private String nickname;
     private String bio;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MemberStatus status = MemberStatus.ACTIVE;
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    public Member(String email, String passwordHash, String phone, String nickname) {
+    public static Member create(String email, String passwordHash, String phone, String nickname) {
+        return new Member(email, passwordHash, phone, nickname);
+    }
+
+    private Member(String email, String passwordHash, String phone, String nickname) {
         this.userKey = UUID.randomUUID().toString();
         this.email = email;
         this.passwordHash = passwordHash;
@@ -38,5 +46,9 @@ public class Member {
     public void update(String email, String bio) {
         if (email != null) this.email = email;
         if (bio != null) this.bio = bio;
+    }
+
+    public void withdraw() {
+        this.status = MemberStatus.WITHDRAWN;
     }
 }
