@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: api-gateway
+
+jwt:
+  secret: cGV0LWZlZWQtand0LXNlY3JldC1rZXktZm9yLXNpZ25pbmctbXVzdC1iZS0yNTYtYml0cw==
+  expiration: 3600000
+
+services:
+  facade-service:
+    url: http://localhost:8083

@@ -3,7 +3,12 @@ plugins {
 }
 
 dependencies {
-    api project(':common-domain')
+    api 'org.springframework.boot:spring-boot-starter'
+
+    // JWT
+    api 'io.jsonwebtoken:jjwt-api:0.12.6'
+    api 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    api 'io.jsonwebtoken:jjwt-jackson:0.12.6' // TODO 취약점 체크
 
     // 나중에 필요한 인프라 의존성 추가
     // Redis, S3, Kafka 등은 필요시 추가

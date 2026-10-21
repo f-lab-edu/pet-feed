@@ -1,7 +1,0 @@
-plugins {
-    id 'base-spring.security'
-}
-
-dependencies {
-    api project(':common-domain')
-}
