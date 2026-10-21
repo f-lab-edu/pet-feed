@@ -8,6 +8,8 @@ import com.petfeed.domain.dto.response.UserProfileResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+
 @FeignClient(name = "user-service", url = "${services.user-service.url}")
 public interface UserFeignClient {
 
@@ -27,7 +29,12 @@ public interface UserFeignClient {
 
     @PutMapping("/api/v1/users/{user-key}")
     void updateProfile(@PathVariable("user-key") String userKey,
+                       @RequestHeader(X_USER_KEY) String requesterKey,
                        @RequestBody UpdateProfileRequest request);
+
+    @DeleteMapping("/api/v1/users/{user-key}")
+    void delete(@PathVariable("user-key") String userKey,
+                @RequestHeader(X_USER_KEY) String requesterKey);
 
     // PATCH → POST/DELETE 분리 (UserController 변경사유 동일)
     @PostMapping("/api/v1/following/{user-key}")

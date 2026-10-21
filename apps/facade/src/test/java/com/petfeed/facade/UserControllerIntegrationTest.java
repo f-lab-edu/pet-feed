@@ -46,7 +46,7 @@ class UserControllerIntegrationTest {
                 String.class
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).contains(USER_KEY);
         verify(postRequestedFor(urlEqualTo("/api/v1/users/signup")));
     }
