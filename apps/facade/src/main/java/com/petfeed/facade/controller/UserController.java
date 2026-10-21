@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -20,46 +22,58 @@ public class UserController {
 
     @PostMapping("/users/signup")
     public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
-        return ResponseEntity.ok(userFacade.signup(request));
+        return ResponseEntity.status(201).body(userFacade.signup(request));
     }
 
     @GetMapping("/users/{user-key}")
     public ResponseEntity<UserProfileResponse> getProfile(
             @PathVariable("user-key") String userKey,
-            @RequestHeader("X-User-Key") String requesterKey) { // requesterKey 는 MDC에 넣을까 고민해볼필요
+            @RequestHeader(X_USER_KEY) String requesterKey) { // requesterKey 는 MDC에 넣을까 고민해볼필요
         return ResponseEntity.ok(userFacade.getProfile(userKey));
     }
 
     @GetMapping("/users/{user-key}/posts")
     public ResponseEntity<PostListResponse> getPostsByUser(
             @PathVariable("user-key") String userKey,
-            @RequestHeader("X-User-Key") String requesterKey,
+            @RequestHeader(X_USER_KEY) String requesterKey,
             @RequestParam(defaultValue = "0") Long cursor) {
+
         return ResponseEntity.ok(userFacade.getPostsByUser(userKey, cursor));
     }
 
     @GetMapping("/users/{user-key}/followers")
     public ResponseEntity<UserListResponse> getFollowers(
             @PathVariable("user-key") String userKey,
-            @RequestHeader("X-User-Key") String requesterKey,
+            @RequestHeader(X_USER_KEY) String requesterKey,
             @RequestParam(defaultValue = "0") Long cursor) {
+
         return ResponseEntity.ok(userFacade.getFollowers(userKey, cursor));
     }
 
     @GetMapping("/users/{user-key}/followings")
     public ResponseEntity<UserListResponse> getFollowings(
             @PathVariable("user-key") String userKey,
-            @RequestHeader("X-User-Key") String requesterKey,
+            @RequestHeader(X_USER_KEY) String requesterKey,
             @RequestParam(defaultValue = "0") Long cursor) {
+
         return ResponseEntity.ok(userFacade.getFollowings(userKey, cursor));
     }
 
     @PutMapping("/users/{user-key}")
     public ResponseEntity<Void> updateProfile(
             @PathVariable("user-key") String userKey,
-            @RequestHeader("X-User-Key") String requesterKey,
-            @RequestBody UpdateProfileRequest request) {
-        userFacade.updateProfile(userKey, request);
+            @RequestHeader(X_USER_KEY) String requesterKey,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        userFacade.updateProfile(userKey, requesterKey, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/users/{user-key}")
+    public ResponseEntity<Void> delete(
+            @PathVariable("user-key") String userKey,
+            @RequestHeader(X_USER_KEY) String requesterKey) {
+        userFacade.delete(userKey, requesterKey);
         return ResponseEntity.noContent().build();
     }
 
@@ -69,7 +83,8 @@ public class UserController {
     @PostMapping("/following/{user-key}")
     public ResponseEntity<Void> follow(
             @PathVariable("user-key") String targetUserKey,
-            @RequestHeader("X-User-Key") String requesterKey) {
+            @RequestHeader(X_USER_KEY) String requesterKey) {
+
         userFacade.follow(targetUserKey);
         return ResponseEntity.ok().build();
     }
@@ -77,7 +92,8 @@ public class UserController {
     @DeleteMapping("/following/{user-key}")
     public ResponseEntity<Void> unfollow(
             @PathVariable("user-key") String targetUserKey,
-            @RequestHeader("X-User-Key") String requesterKey) {
+            @RequestHeader(X_USER_KEY) String requesterKey) {
+
         userFacade.unfollow(targetUserKey);
         return ResponseEntity.ok().build();
     }

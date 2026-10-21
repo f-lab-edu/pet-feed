@@ -48,8 +48,12 @@ public class UserFacade {
         return userFeignClient.getFollowings(userKey, cursor);
     }
 
-    public void updateProfile(String userKey, UpdateProfileRequest request) {
-        userFeignClient.updateProfile(userKey, request);
+    public void updateProfile(String userKey, String requesterKey, UpdateProfileRequest request) {
+        userFeignClient.updateProfile(userKey, requesterKey, request);
+    }
+
+    public void delete(String userKey, String requesterKey) {
+        userFeignClient.delete(userKey, requesterKey);
     }
 
     // PATCH → POST/DELETE 분리 (UserController 변경사유 동일)
