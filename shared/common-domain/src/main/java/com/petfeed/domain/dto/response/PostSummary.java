@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
+@AllArgsConstructor(staticName = "of")
 public class PostSummary {
 
     private Long postId;
@@ -17,4 +17,9 @@ public class PostSummary {
     private int commentCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private AuthorResponse author;
+
+    public PostSummary withAuthor(AuthorResponse author) {
+        return PostSummary.of(postId, thumbnailUrl, likeCount, commentCount, createdAt, updatedAt, author);
+    }
 }
