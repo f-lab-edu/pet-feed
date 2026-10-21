@@ -26,7 +26,6 @@ target/
 logs/
 
 .claude/
-.docs/
 
 # Application
 application-local.yml
