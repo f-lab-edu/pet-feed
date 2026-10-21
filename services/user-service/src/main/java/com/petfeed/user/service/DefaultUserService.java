@@ -29,26 +29,27 @@ public class DefaultUserService implements UserService {
     public SignupResponse signup(SignupRequest request) {
         String email = normalize(request.getEmail());
         if (members.existsByEmail(email)) throw error(HttpStatus.CONFLICT, "Email already registered");
-        Member member = members.saveAndFlush(new Member(email, passwords.encode(request.getPassword()),
+        Member member = members.saveAndFlush(Member.create(email, passwords.encode(request.getPassword()),
                 request.getPhone(), request.getNickname()));
-        return new SignupResponse(member.getUserKey(), member.getCreatedAt());
+        return SignupResponse.of(member.getUserKey(), member.getCreatedAt());
     }
 
     @Override
     public LoginResponse login(LoginRequest request) {
         Member member = members.findByEmail(normalize(request.getEmail()))
                 .orElseThrow(() -> error(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-        if (!passwords.matches(request.getPassword(), member.getPasswordHash()))
+        if (member.getStatus() == MemberStatus.WITHDRAWN
+                || !passwords.matches(request.getPassword(), member.getPasswordHash()))
             throw error(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         // Refresh-token lifecycle is outside the member CRUD scope.
-        return new LoginResponse(tokens.generateToken(member.getUserKey()), null,
+        return LoginResponse.of(tokens.generateToken(member.getUserKey()), null,
                 Long.toString(expirationMs), "Bearer");
     }
 
     @Override
     public UserProfileResponse getProfile(String userKey) {
         Member member = requireMember(userKey);
-        return new UserProfileResponse(member.getNickname(), null, member.getBio(), 0, 0, false, 0);
+        return UserProfileResponse.of(member.getNickname(), null, member.getBio(), 0, 0, false, 0);
     }
 
     @Override
@@ -67,11 +68,20 @@ public class DefaultUserService implements UserService {
     @Transactional
     public void delete(String userKey, String requesterKey) {
         requireOwner(userKey, requesterKey);
-        members.delete(requireMember(userKey));
+        requireMember(userKey).withdraw();
+    }
+
+    @Override
+    public AuthorResponse getAuthor(String userKey) {
+        Member member = members.findById(userKey)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Member not found"));
+        return AuthorResponse.of(member.getStatus(), member.getStatus() == MemberStatus.WITHDRAWN
+                ? "(탈퇴한 회원)" : member.getNickname());
     }
 
     private Member requireMember(String userKey) {
-        return members.findById(userKey).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Member not found"));
+        return members.findById(userKey).filter(member -> member.getStatus() == MemberStatus.ACTIVE)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Member not found"));
     }
 
     private void requireOwner(String userKey, String requesterKey) {

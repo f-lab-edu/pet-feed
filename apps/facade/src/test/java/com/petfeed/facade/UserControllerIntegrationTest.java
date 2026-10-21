@@ -20,6 +20,34 @@ class UserControllerIntegrationTest {
     private static final String USER_KEY = "test-user-key";
 
     @Test
+    void withdrawnAuthorIsSerializedInPostList() {
+        String key = "withdrawn-owner";
+        stubFor(get(urlEqualTo("/internal/v1/users/" + key + "/author"))
+                .willReturn(okJson("{\"status\":\"WITHDRAWN\",\"displayName\":\"(탈퇴한 회원)\"}")));
+        stubFor(get(urlPathEqualTo("/api/v1/users/" + key + "/posts"))
+                .willReturn(okJson("{\"posts\":[{\"postId\":42}],\"nextCursor\":null,\"hasNext\":false}")));
+
+        var response = restTemplate.exchange("/api/v1/users/" + key + "/posts", HttpMethod.GET,
+                new HttpEntity<>(userKeyHeader()), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("\"postId\":42", "\"status\":\"WITHDRAWN\"", "(탈퇴한 회원)");
+    }
+
+    @Test
+    void authorServiceFailureDoesNotReturnWithdrawnAuthor() {
+        String key = "unavailable-owner";
+        stubFor(get(urlEqualTo("/internal/v1/users/" + key + "/author"))
+                .willReturn(aResponse().withStatus(503)));
+
+        var response = restTemplate.exchange("/api/v1/users/" + key + "/posts", HttpMethod.GET,
+                new HttpEntity<>(userKeyHeader()), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getBody()).isNullOrEmpty();
+    }
+
+    @Test
     void signup_success() {
         stubFor(post(urlEqualTo("/api/v1/users/signup"))
                 .willReturn(aResponse()
@@ -92,6 +120,8 @@ class UserControllerIntegrationTest {
 
     @Test
     void getPostsByUser_success() {
+        stubFor(get(urlEqualTo("/internal/v1/users/" + USER_KEY + "/author"))
+                .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"petlover\"}")));
         stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/posts"))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -122,6 +152,7 @@ class UserControllerIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("thumbnailUrl");
+        assertThat(response.getBody()).contains("\"status\":\"ACTIVE\"", "\"displayName\":\"petlover\"");
         verify(getRequestedFor(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/posts")));
     }
 
