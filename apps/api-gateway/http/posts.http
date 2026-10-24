@@ -1,0 +1,31 @@
+### Login first and put the access token here
+@baseUrl = http://localhost:8080
+@accessToken = REPLACE_WITH_ACCESS_TOKEN
+@postId = 1
+@userKey = REPLACE_WITH_USER_KEY
+
+### Create
+POST {{baseUrl}}/api/v1/posts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"content":"우리 강아지의 첫 산책!","thumbnailUrl":null}
+
+### Detail (includes author status and display name)
+GET {{baseUrl}}/api/v1/posts/{{postId}}
+Authorization: Bearer {{accessToken}}
+
+### Replace content and thumbnail (null clears the thumbnail)
+PUT {{baseUrl}}/api/v1/posts/{{postId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"content":"산책 다녀왔어요!","thumbnailUrl":null}
+
+### Author posts: pass nextCursor as cursor to fetch the next page
+GET {{baseUrl}}/api/v1/users/{{userKey}}/posts?cursor=0
+Authorization: Bearer {{accessToken}}
+
+### Delete
+DELETE {{baseUrl}}/api/v1/posts/{{postId}}
+Authorization: Bearer {{accessToken}}
