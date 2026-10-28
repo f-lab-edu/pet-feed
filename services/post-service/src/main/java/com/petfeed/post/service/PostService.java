@@ -4,6 +4,7 @@ import com.petfeed.domain.dto.request.SavePostRequest;
 import com.petfeed.domain.dto.response.*;
 import com.petfeed.post.domain.Post;
 import com.petfeed.post.repository.PostRepository;
+import com.petfeed.post.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class PostService {
     private static final int PAGE_SIZE = 20;
     private final PostRepository posts;
+    private final CommentRepository comments;
 
     @Transactional
     public PostDetailResponse create(String userKey, SavePostRequest request) {
@@ -34,6 +36,7 @@ public class PostService {
     public void delete(Long id, String requesterKey) {
         Post post = requirePost(id);
         post.requireOwner(requesterKey);
+        comments.deleteByPostId(id);
         posts.delete(post);
     }
 
@@ -47,7 +50,7 @@ public class PostService {
                 : posts.findByUserKeyAndIdLessThanOrderByIdDesc(userKey, cursor, page);
         boolean hasNext = found.size() > PAGE_SIZE;
         var visible = found.stream().limit(PAGE_SIZE).map(post -> PostSummary.of(post.getId(),
-                post.getThumbnailUrl(), 0, 0, post.getCreatedAt(), post.getUpdatedAt(), null)).toList();
+                post.getThumbnailUrl(), 0, comments.countByPostId(post.getId()), post.getCreatedAt(), post.getUpdatedAt(), null)).toList();
         return PostListResponse.of(visible, hasNext ? visible.get(visible.size() - 1).getPostId() : null, hasNext);
     }
 
