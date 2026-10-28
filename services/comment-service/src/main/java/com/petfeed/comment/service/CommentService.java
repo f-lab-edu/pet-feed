@@ -1,15 +1,18 @@
-package com.petfeed.post.service;
+package com.petfeed.comment.service;
 
 import com.petfeed.domain.dto.request.SaveCommentRequest;
 import com.petfeed.domain.dto.response.*;
-import com.petfeed.post.domain.*;
-import com.petfeed.post.repository.*;
+import com.petfeed.comment.domain.*;
+import com.petfeed.comment.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -17,15 +20,18 @@ import org.springframework.web.server.ResponseStatusException;
 public class CommentService {
     private static final int PAGE_SIZE = 20;
     private final CommentRepository comments;
-    private final PostRepository posts;
+    private final CommentThreadRepository threads;
+    private final CommentThreadInitializer initializer;
 
     @Transactional
     public CommentResponse create(Long postId, String key, SaveCommentRequest request) {
-        return response(comments.save(Comment.create(requirePost(postId), key, request.getContent())));
+        var thread = lockThread(postId);
+        if (thread.isClosed())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post comments are closed");
+        return response(comments.save(Comment.create(postId, key, request.getContent())));
     }
 
     public CommentListResponse list(Long postId, Long cursor) {
-        requirePost(postId);
         if (cursor == null || cursor < 0)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cursor must be nonnegative");
         var page = PageRequest.of(0, PAGE_SIZE + 1);
@@ -48,8 +54,24 @@ public class CommentService {
         comments.delete(comment);
     }
 
-    private Post requirePost(Long id) {
-        return posts.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+    @Transactional
+    public void close(Long postId) {
+        lockThread(postId).close();
+        comments.deleteByPostId(postId);
+    }
+
+    public Map<Long, Long> counts(List<Long> postIds) {
+        if (postIds.size() > 20 || postIds.stream().anyMatch(id -> id == null || id <= 0))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At most 20 positive post IDs are allowed");
+        return comments.countForPosts(postIds).stream()
+                .collect(Collectors.toMap(CommentRepository.PostCount::getPostId, CommentRepository.PostCount::getTotal));
+    }
+
+    private CommentThread lockThread(Long postId) {
+        if (postId == null || postId <= 0)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post ID must be positive");
+        initializer.ensure(postId);
+        return threads.lockByPostId(postId).orElseThrow();
     }
 
     private Comment requireComment(Long postId, Long id) {
@@ -57,7 +79,7 @@ public class CommentService {
     }
 
     private CommentResponse response(Comment comment) {
-        return CommentResponse.of(comment.getId(), comment.getPost().getId(), comment.getUserKey(), comment.getContent(),
+        return CommentResponse.of(comment.getId(), comment.getPostId(), comment.getUserKey(), comment.getContent(),
                 comment.getCreatedAt(), comment.getUpdatedAt(), null);
     }
 }

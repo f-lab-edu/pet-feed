@@ -1,8 +1,8 @@
-package com.petfeed.post.controller;
+package com.petfeed.comment.controller;
 
 import com.petfeed.domain.dto.request.SaveCommentRequest;
 import com.petfeed.domain.dto.response.*;
-import com.petfeed.post.service.CommentService;
+import com.petfeed.comment.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +14,7 @@ import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
 @RequestMapping("/api/v1/posts/{postId}/comments")
 public class CommentController {
     private final CommentService comments;
+
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
