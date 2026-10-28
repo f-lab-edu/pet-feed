@@ -31,7 +31,7 @@ public class GatewayController {
     @Value("${services.facade-service.url}")
     private String facadeServiceUrl;
 
-    @RequestMapping("/**")
+    @RequestMapping("/api/**")
     public ResponseEntity<byte[]> proxy(HttpServletRequest request,
                                         @RequestBody(required = false) byte[] body) {
         String targetUrl = facadeServiceUrl + request.getRequestURI();
