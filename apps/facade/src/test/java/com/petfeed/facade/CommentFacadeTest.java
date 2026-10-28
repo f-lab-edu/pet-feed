@@ -12,7 +12,8 @@ import java.util.List;
 class CommentFacadeTest {
     private final CommentFeignClient comments = mock(CommentFeignClient.class);
     private final UserFeignClient users = mock(UserFeignClient.class);
-    private final CommentFacade facade = new CommentFacade(comments, users);
+    private final PostFeignClient posts = mock(PostFeignClient.class);
+    private final CommentFacade facade = new CommentFacade(comments, users, posts);
 
     @Test void withdrawnMemberCannotWrite() {
         when(users.getAuthor("reader")).thenReturn(AuthorResponse.of(MemberStatus.WITHDRAWN, "withdrawn"));

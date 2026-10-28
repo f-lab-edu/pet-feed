@@ -1,4 +1,4 @@
-package com.petfeed.post.domain;
+package com.petfeed.comment.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,9 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class Comment {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false, updatable = false)
-    private Post post;
+    @Column(name = "post_id", nullable = false, updatable = false)
+    private Long postId;
     @Column(nullable = false, updatable = false)
     private String userKey;
     @Column(nullable = false, length = 1000)
@@ -25,11 +24,13 @@ public class Comment {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static Comment create(Post post, String key, String content) {
+    public static Comment create(Long postId, String key, String content) {
+        if (postId == null || postId <= 0)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post ID must be positive");
         if (key == null || key.isBlank())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author is required");
         Comment comment = new Comment();
-        comment.post = post;
+        comment.postId = postId;
         comment.userKey = key;
         comment.createdAt = LocalDateTime.now();
         comment.replace(content);

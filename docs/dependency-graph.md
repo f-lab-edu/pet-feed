@@ -59,6 +59,12 @@ services/post-service
 
 ## 전이 의존성 요약
 
+`services/comment-service`는 post-service와 독립적인 Spring Boot/JPA 모듈이다.
+`base-spring.data`, `base-spring.web`, `org.springframework.boot` 플러그인과
+공통 DTO·인프라 모듈을 사용하며 H2 `commentdb`(8084)를 소유한다.
+서비스 모듈 간 Gradle 의존성과 JPA 엔티티 공유는 없다.
+Facade가 user-service(8081), post-service(8082), comment-service(8084)를 HTTP로 조정한다.
+
 | 모듈 | Spring Web | Spring Security | JPA | JWT |
 |------|:---:|:---:|:---:|:---:|
 | common-domain | - | - | - | - |
@@ -67,3 +73,4 @@ services/post-service
 | facade | ✓ | - | - | - |
 | user-service | ✓ | - | ✓ | - |
 | post-service | ✓ | - | ✓ | - |
+| comment-service | ✓ | - | ✓ | - |

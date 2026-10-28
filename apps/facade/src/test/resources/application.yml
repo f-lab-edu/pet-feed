@@ -3,3 +3,5 @@ services:
     url: http://localhost:${wiremock.server.port}
   post-service:
     url: http://localhost:${wiremock.server.port}
+  comment-service:
+    url: http://localhost:${wiremock.server.port}

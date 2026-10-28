@@ -14,13 +14,16 @@ import java.util.HashMap;
 public class CommentFacade {
     private final CommentFeignClient comments;
     private final UserFeignClient users;
+    private final PostFeignClient posts;
 
     public CommentResponse create(Long postId, String key, SaveCommentRequest request) {
         var author = requireActive(key);
+        posts.get(postId);
         return comments.create(postId, key, request).withAuthor(author);
     }
 
     public CommentListResponse list(Long postId, Long cursor) {
+        posts.get(postId);
         var page = comments.list(postId, cursor);
         var authors = new HashMap<String, AuthorResponse>();
         var enriched = page.getComments().stream().map(comment -> comment.withAuthor(
@@ -30,11 +33,13 @@ public class CommentFacade {
 
     public void update(Long postId, Long id, String key, SaveCommentRequest request) {
         requireActive(key);
+        posts.get(postId);
         comments.update(postId, id, key, request);
     }
 
     public void delete(Long postId, Long id, String key) {
         requireActive(key);
+        posts.get(postId);
         comments.delete(postId, id, key);
     }
 

@@ -22,4 +22,8 @@ public class PostSummary {
     public PostSummary withAuthor(AuthorResponse author) {
         return PostSummary.of(postId, thumbnailUrl, likeCount, commentCount, createdAt, updatedAt, author);
     }
+
+    public PostSummary withCommentCount(int count) {
+        return of(postId, thumbnailUrl, likeCount, count, createdAt, updatedAt, author);
+    }
 }

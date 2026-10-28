@@ -21,6 +21,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void withdrawnAuthorIsSerializedInPostList() {
+        stubFor(get(urlPathEqualTo("/internal/v1/comments/counts")).willReturn(okJson("{}")));
         String key = "withdrawn-owner";
         stubFor(get(urlEqualTo("/internal/v1/users/" + key + "/author"))
                 .willReturn(okJson("{\"status\":\"WITHDRAWN\",\"displayName\":\"(탈퇴한 회원)\"}")));
@@ -120,6 +121,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void getPostsByUser_success() {
+        stubFor(get(urlPathEqualTo("/internal/v1/comments/counts")).willReturn(okJson("{\"1\":2}")));
         stubFor(get(urlEqualTo("/internal/v1/users/" + USER_KEY + "/author"))
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"petlover\"}")));
         stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/posts"))

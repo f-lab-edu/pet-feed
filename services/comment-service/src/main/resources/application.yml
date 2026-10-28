@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: comment-service
+  datasource:
+    url: jdbc:h2:mem:commentdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+server:
+  port: 8084
