@@ -74,3 +74,7 @@ Facade가 user-service(8081), post-service(8082), comment-service(8084)를 HTTP�
 | user-service | ✓ | - | ✓ | - |
 | post-service | ✓ | - | ✓ | - |
 | comment-service | ✓ | - | ✓ | - |
+| follow-service | ✓ | - | ✓ | - |
+
+`services/follow-service`는 `base-spring.data`, `base-spring.web`, Boot 및 common-domain을 사용한다.
+독립 H2 followdb(8085)를 소유하며 다른 서비스 모듈 의존성이 없다. 회원 상태 조합은 Facade가 담당한다.

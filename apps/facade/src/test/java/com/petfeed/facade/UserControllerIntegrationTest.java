@@ -17,6 +17,14 @@ class UserControllerIntegrationTest {
     @Autowired
     TestRestTemplate restTemplate;
 
+    @org.junit.jupiter.api.BeforeEach
+    void followDefaults() {
+        stubFor(get(urlMatching("/internal/v1/users/[^/]+/author")).atPriority(10)
+                .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"member\"}")));
+        stubFor(get(urlPathMatching("/internal/v1/users/[^/]+/(followers|followings)")).atPriority(10)
+                .willReturn(okJson("{\"entries\":[],\"nextCursor\":null,\"hasNext\":false}")));
+        stubFor(get(urlPathEqualTo("/internal/v1/follows/targets")).willReturn(okJson("[]")));
+    }
     private static final String USER_KEY = "test-user-key";
 
     @Test
@@ -160,15 +168,15 @@ class UserControllerIntegrationTest {
 
     @Test
     void getFollowers_success() {
-        stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followers"))
+        stubFor(get(urlPathEqualTo("/internal/v1/users/" + USER_KEY + "/followers"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("""
                                 {
-                                  "users": [
+                                  "entries": [
                                     {
-                                      "userKey": "follower-key",
+                                      "followId": 1, "userKey": "follower-key",
                                       "nickname": "follower1",
                                       "profileImageUrl": null,
                                       "following": false
@@ -188,20 +196,20 @@ class UserControllerIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("follower-key");
-        verify(getRequestedFor(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followers")));
+        verify(getRequestedFor(urlPathEqualTo("/internal/v1/users/" + USER_KEY + "/followers")));
     }
 
     @Test
     void getFollowings_success() {
-        stubFor(get(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followings"))
+        stubFor(get(urlPathEqualTo("/internal/v1/users/" + USER_KEY + "/followings"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("""
                                 {
-                                  "users": [
+                                  "entries": [
                                     {
-                                      "userKey": "following-key",
+                                      "followId": 2, "userKey": "following-key",
                                       "nickname": "following1",
                                       "profileImageUrl": null,
                                       "following": true
@@ -221,7 +229,7 @@ class UserControllerIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("following-key");
-        verify(getRequestedFor(urlPathEqualTo("/api/v1/users/" + USER_KEY + "/followings")));
+        verify(getRequestedFor(urlPathEqualTo("/internal/v1/users/" + USER_KEY + "/followings")));
     }
 
     @Test
@@ -262,7 +270,7 @@ class UserControllerIntegrationTest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(postRequestedFor(urlEqualTo("/api/v1/following/" + USER_KEY)));
+        verify(postRequestedFor(urlEqualTo("/api/v1/following/" + USER_KEY)).withHeader("X-User-Key", equalTo("requester-key")));
     }
 
     @Test
@@ -279,7 +287,7 @@ class UserControllerIntegrationTest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(deleteRequestedFor(urlEqualTo("/api/v1/following/" + USER_KEY)));
+        verify(deleteRequestedFor(urlEqualTo("/api/v1/following/" + USER_KEY)).withHeader("X-User-Key", equalTo("requester-key")));
     }
 
     private HttpHeaders jsonHeaders() {

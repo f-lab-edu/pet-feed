@@ -48,14 +48,6 @@ public class UserFacade {
                 posts.getNextCursor(), posts.isHasNext());
     }
 
-    public UserListResponse getFollowers(String userKey, Long cursor) {
-        return userFeignClient.getFollowers(userKey, cursor);
-    }
-
-    public UserListResponse getFollowings(String userKey, Long cursor) {
-        return userFeignClient.getFollowings(userKey, cursor);
-    }
-
     public void updateProfile(String userKey, String requesterKey, UpdateProfileRequest request) {
         userFeignClient.updateProfile(userKey, requesterKey, request);
     }
@@ -64,12 +56,4 @@ public class UserFacade {
         userFeignClient.delete(userKey, requesterKey);
     }
 
-    // PATCH → POST/DELETE 분리 (UserController 변경사유 동일)
-    public void follow(String targetUserKey) {
-        userFeignClient.follow(targetUserKey);
-    }
-
-    public void unfollow(String targetUserKey) {
-        userFeignClient.unfollow(targetUserKey);
-    }
 }

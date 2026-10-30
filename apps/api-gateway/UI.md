@@ -15,12 +15,13 @@
 
 ## 실제 API 모드
 
-별도 터미널에서 아래 네 서비스를 실행한다. Gateway는 위 명령으로 실행해 둔다.
+별도 터미널에서 아래 다섯 서비스를 실행한다. Gateway는 위 명령으로 실행해 둔다.
 
 ```powershell
 .\gradlew.bat :user-service:bootRun
 .\gradlew.bat :post-service:bootRun
 .\gradlew.bat :comment-service:bootRun
+.\gradlew.bat :follow-service:bootRun
 .\gradlew.bat :facade:bootRun
 ```
 
