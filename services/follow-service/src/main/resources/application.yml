@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: follow-service
+  datasource:
+    url: jdbc:h2:mem:followdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+server:
+  port: 8085

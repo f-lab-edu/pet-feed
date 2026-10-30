@@ -12,3 +12,5 @@ services:
     url: http://localhost:8082
   comment-service:
     url: http://localhost:8084
+  follow-service:
+    url: http://localhost:8085

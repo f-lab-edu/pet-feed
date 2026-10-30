@@ -40,6 +40,9 @@ project(':post-service').projectDir = file('services/post-service')
 include ':comment-service'
 project(':comment-service').projectDir = file('services/comment-service')
 
+include ':follow-service'
+project(':follow-service').projectDir = file('services/follow-service')
+
 // Apps 모듈 (애플리케이션)
 include ':api-gateway'
 project(':api-gateway').projectDir = file('apps/api-gateway')

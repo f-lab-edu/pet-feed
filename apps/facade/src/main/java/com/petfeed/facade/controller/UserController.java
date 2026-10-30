@@ -19,6 +19,7 @@ import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
 public class UserController {
 
     private final UserFacade userFacade;
+    private final FollowFacade followFacade;
 
     @PostMapping("/users/signup")
     public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
@@ -29,7 +30,7 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> getProfile(
             @PathVariable("user-key") String userKey,
             @RequestHeader(X_USER_KEY) String requesterKey) { // requesterKey 는 MDC에 넣을까 고민해볼필요
-        return ResponseEntity.ok(userFacade.getProfile(userKey));
+        return ResponseEntity.ok(followFacade.profile(userKey, requesterKey, userFacade.getProfile(userKey)));
     }
 
     @GetMapping("/users/{user-key}/posts")
@@ -47,7 +48,7 @@ public class UserController {
             @RequestHeader(X_USER_KEY) String requesterKey,
             @RequestParam(defaultValue = "0") Long cursor) {
 
-        return ResponseEntity.ok(userFacade.getFollowers(userKey, cursor));
+        return ResponseEntity.ok(followFacade.list(userKey, requesterKey, cursor, true));
     }
 
     @GetMapping("/users/{user-key}/followings")
@@ -56,7 +57,7 @@ public class UserController {
             @RequestHeader(X_USER_KEY) String requesterKey,
             @RequestParam(defaultValue = "0") Long cursor) {
 
-        return ResponseEntity.ok(userFacade.getFollowings(userKey, cursor));
+        return ResponseEntity.ok(followFacade.list(userKey, requesterKey, cursor, false));
     }
 
     @PutMapping("/users/{user-key}")
@@ -85,7 +86,7 @@ public class UserController {
             @PathVariable("user-key") String targetUserKey,
             @RequestHeader(X_USER_KEY) String requesterKey) {
 
-        userFacade.follow(targetUserKey);
+        followFacade.follow(requesterKey, targetUserKey);
         return ResponseEntity.ok().build();
     }
 
@@ -94,7 +95,7 @@ public class UserController {
             @PathVariable("user-key") String targetUserKey,
             @RequestHeader(X_USER_KEY) String requesterKey) {
 
-        userFacade.unfollow(targetUserKey);
+        followFacade.unfollow(requesterKey, targetUserKey);
         return ResponseEntity.ok().build();
     }
 }

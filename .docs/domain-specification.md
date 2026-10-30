@@ -1,6 +1,6 @@
 # Pet Feed 도메인 명세서
 
-- 작성일: 2026-10-27 / 최종 갱신: 2026-10-29 (Asia/Seoul)
+- 작성일: 2026-10-27 / 최종 갱신: 2026-10-30 (Asia/Seoul)
 - 기준: 로컬 `feature/temporary-ui`의 현재 구현. main 병합 여부와는 별개다.
 - 목적: 구현된 모델, 관계, 업무 규칙과 책임 경계를 설명한다. 미구현 항목을 확정 정책으로 간주하지 않는다.
 - 관련 문서: [탈퇴 정책](member-withdrawal-policy.md), [테스트 책임](testing-policy.md), [댓글 서비스 분리 기록](2026-10-29.md), [개발 우선순위](2026-10-27.md).
@@ -15,6 +15,7 @@
 | 댓글(Comment) | 특정 게시물에 회원이 남기는 본문 | comment-service의 영속 엔티티 |
 | 작성자(Author) | 게시물·댓글의 작성 회원을 표시하는 정보 | 회원 상태와 표시 이름을 조합한 응답 모델. 별도 엔티티 아님 |
 | 피드(Feed) | 화면에서 보는 게시물 목록 | 회원별 목록만 구현. 전체·팔로우 피드는 미구현 |
+| 팔로우(FollowRelation) | 회원 간 방향성 관계 | follow-service의 독립 엔티티. [팔로우 명세](follow-domain.md) 참조 |
 | 반려동물(Pet) | 서비스가 다루는 콘텐츠의 주제 | 별도 반려동물 엔티티·등록 기능은 미구현 |
 
 ## 2. 도메인 관계와 소유권
@@ -24,6 +25,8 @@ erDiagram
     MEMBER ||--o{ POST : "작성 (userKey 논리 참조)"
     MEMBER ||--o{ COMMENT : "작성 (userKey 논리 참조)"
     POST ||--o{ COMMENT : "포함 (postId 논리 참조)"
+    MEMBER ||--o{ FOLLOW_RELATION : "followerKey 논리 참조"
+    MEMBER ||--o{ FOLLOW_RELATION : "followingKey 논리 참조"
 ```
 
 - 회원 한 명은 여러 게시물과 댓글을 작성할 수 있다. 게시물과 댓글에는 각각 한 작성자 키가 저장된다.
@@ -37,6 +40,7 @@ erDiagram
 | user-service | 회원 식별, 이메일 중복, 비밀번호 검증, 회원 상태·프로필, 작성자 표시 정보 |
 | post-service | 게시물 저장, 본문 제약, 게시물 소유자 권한, 게시물 수·커서 조회 |
 | comment-service | 댓글 저장, 본문 제약, 댓글 소유자 권한, 댓글 수·커서 조회, 게시물별 댓글 작성 차단·삭제 |
+| follow-service | 회원 간 방향성 관계, 중복·자기 팔로우 방지, 원본 관계 목록과 요청자 기준 팔로우 여부 조회 |
 | Facade | 회원 상태·게시물 존재 확인, 작성자 및 댓글 수 조합, 게시물 삭제 시 댓글 정리 조정 |
 | Gateway | JWT 검증, 내부 사용자 키 전달, 외부 API 진입 및 화면 제공 |
 | 임시 화면 | 입력·오류 표시, API 호출, 데모 데이터. 업무 권한 판단의 최종 책임은 서버에 있음 |
@@ -150,7 +154,7 @@ stateDiagram-v2
 - Facade는 게시물 등록·상세·회원별 목록, 댓글 등록·목록에 작성자 모델을 조합한다. 회원 조회 실패를 탈퇴 상태로 대체하지 않는다.
 - 게시물 서비스가 반환하는 원본 응답의 author는 null이며, 외부 표시 정보 조합은 Facade 책임이다.
 - 댓글 목록에서는 같은 작성자를 한 요청 안에서 중복 조회하지 않는다. 요청 간 작성자 캐시는 없다.
-- 회원 프로필의 게시물 수는 Facade에서 조합한다. 프로필 이미지 null, 팔로워·팔로잉 수 0, isFollowing=false는 현재 미구현에 따른 값이다.
+- 회원 프로필의 게시물 수는 Facade에서 조합한다. 프로필 이미지는 현재 null이다. user-service 원본의 팔로워·팔로잉 수 0 및 isFollowing=false는 Facade에서 실제 정상 회원 관계 수와 요청자 기준 팔로우 여부로 교체한다.
 
 ## 7. 인증과 일관성 경계
 
@@ -187,7 +191,7 @@ stateDiagram-v2
 
 ## 9. 미구현·미결정 범위
 
-- 반려동물 프로필과 회원의 소유 관계, 전체/팔로우 피드, 팔로우 관계 저장, 좋아요, 알림.
+- 반려동물 프로필과 회원의 소유 관계, 전체/팔로우 피드, 좋아요, 알림. 팔로우 관계 저장과 조회는 별도 [팔로우 도메인 명세](follow-domain.md)에 따라 구현했다.
 - 이미지 업로드·저장소·삭제 정책, 댓글 대댓글, 콘텐츠 신고·관리자 삭제, 공개 범위 설정.
 - 탈퇴 개인정보 보존·익명화·이메일 재사용 정책의 변경, 계정 복구, 비밀번호 변경·재설정.
 - 영속 DB와 마이그레이션, 토큰 갱신·즉시 폐기, 내부 서비스 접근 통제, 분산 상태 변경의 일관성 보장.
@@ -199,5 +203,6 @@ stateDiagram-v2
 - [Member](../services/user-service/src/main/java/com/petfeed/user/domain/Member.java), [DefaultUserService](../services/user-service/src/main/java/com/petfeed/user/service/DefaultUserService.java)
 - [Post](../services/post-service/src/main/java/com/petfeed/post/domain/Post.java), [PostService](../services/post-service/src/main/java/com/petfeed/post/service/PostService.java)
 - [Comment](../services/comment-service/src/main/java/com/petfeed/comment/domain/Comment.java), [CommentService](../services/comment-service/src/main/java/com/petfeed/comment/service/CommentService.java)
+- [FollowRelation](../services/follow-service/src/main/java/com/petfeed/follow/domain/FollowRelation.java), [FollowService](../services/follow-service/src/main/java/com/petfeed/follow/service/FollowService.java), [FollowFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/FollowFacade.java)
 - [PostFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/PostFacade.java), [CommentFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/CommentFacade.java), [UserFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/UserFacade.java)
 - [요청 DTO](../shared/common-domain/src/main/java/com/petfeed/domain/dto/request), [응답 DTO](../shared/common-domain/src/main/java/com/petfeed/domain/dto/response)

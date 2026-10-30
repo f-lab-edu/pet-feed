@@ -5,3 +5,16 @@ services:
     url: http://localhost:${wiremock.server.port}
   comment-service:
     url: http://localhost:${wiremock.server.port}
+  follow-service:
+    url: http://localhost:${wiremock.server.port}
+
+# WireMock resets/restarts between contexts; do not reuse its old HTTP sockets.
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            defaultRequestHeaders:
+              Connection:
+                - close

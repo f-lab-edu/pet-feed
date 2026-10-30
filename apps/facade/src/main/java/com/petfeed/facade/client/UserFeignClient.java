@@ -23,14 +23,6 @@ public interface UserFeignClient {
     @GetMapping("/api/v1/users/{user-key}")
     UserProfileResponse getProfile(@PathVariable("user-key") String userKey);
 
-    @GetMapping("/api/v1/users/{user-key}/followers")
-    UserListResponse getFollowers(@PathVariable("user-key") String userKey,
-                                  @RequestParam(defaultValue = "0") Long cursor);
-
-    @GetMapping("/api/v1/users/{user-key}/followings")
-    UserListResponse getFollowings(@PathVariable("user-key") String userKey,
-                                   @RequestParam(defaultValue = "0") Long cursor);
-
     @PutMapping("/api/v1/users/{user-key}")
     void updateProfile(@PathVariable("user-key") String userKey,
                        @RequestHeader(X_USER_KEY) String requesterKey,
@@ -40,10 +32,4 @@ public interface UserFeignClient {
     void delete(@PathVariable("user-key") String userKey,
                 @RequestHeader(X_USER_KEY) String requesterKey);
 
-    // PATCH → POST/DELETE 분리 (UserController 변경사유 동일)
-    @PostMapping("/api/v1/following/{user-key}")
-    void follow(@PathVariable("user-key") String targetUserKey);
-
-    @DeleteMapping("/api/v1/following/{user-key}")
-    void unfollow(@PathVariable("user-key") String targetUserKey);
 }
