@@ -19,6 +19,102 @@ const seed = () => ({
 let demoData = readStorage(localStorage, 'petfeed-demo-v1', null);
 if (!demoData || !Array.isArray(demoData.posts) || !Array.isArray(demoData.comments)) demoData = seed();
 const state = { mode: 'demo', token: readStorage(sessionStorage, 'petfeed-token', ''), userKey: '', target: '', posts: [], cursor: 0, busy: false, generation: 0, commentPages: new Map(), editor: null, signup: false, deletion: null };
+const feedMediaUrls = new Set();
+let editorBusy = false;
+
+async function fetchMedia(postId, mediaId) {
+  const response = await fetch(`/api/v1/posts/${postId}/media/${encodeURIComponent(mediaId)}`, {
+    headers: {Authorization: `Bearer ${state.token}`}
+  });
+  if (!response.ok) throw new Error(response.status === 401 || response.status === 403
+    ? '첨부를 보려면 다시 로그인해 주세요.' : '첨부 파일을 불러올 수 없어요.');
+  const blob = await response.blob();
+  return {url: URL.createObjectURL(blob), type: blob.type};
+}
+
+function mediaElement(url, type) {
+  const node = document.createElement(type.startsWith('video/') ? 'video' : 'img');
+  node.src = url;
+  if (node.tagName === 'VIDEO') { node.controls = true; node.playsInline = true; node.preload = 'metadata'; }
+  else { node.alt = '게시물 첨부 사진'; node.loading = 'lazy'; }
+  node.addEventListener('error', () => {
+    const message = document.createElement('p');
+    message.textContent = '재생할 수 없는 파일이에요. MP4 영상은 브라우저에서 지원하는 코덱이 필요해요.';
+    node.replaceWith(message);
+  }, {once: true});
+  return node;
+}
+
+async function loadAttachment(button) {
+  if (button.disabled) return;
+  button.disabled = true;
+  button.textContent = '첨부 불러오는 중…';
+  try {
+    const media = await fetchMedia(button.dataset.postId, button.dataset.mediaId);
+    if (!button.isConnected) { URL.revokeObjectURL(media.url); return; }
+    feedMediaUrls.add(media.url);
+    button.replaceWith(mediaElement(media.url, media.type));
+  } catch (error) { button.textContent = `${error.message} 다시 시도`; button.disabled = false; }
+}
+
+function renderEditorMedia() {
+  const container = $('#media-previews');
+  container.replaceChildren();
+  (state.editor?.attachments || []).forEach((item, index) => {
+    const tile = document.createElement('div'); tile.className = 'media-preview';
+    if (item.url) tile.append(mediaElement(item.url, item.type));
+    const label = document.createElement('span'); label.textContent = `${index + 1}. ${item.file?.name || '기존 첨부'}`;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'button quiet'; remove.textContent = '제거';
+    remove.disabled = editorBusy;
+    remove.onclick = () => {
+      if (editorBusy) return;
+      state.editor.attachments.splice(index, 1);
+      if (item.url) URL.revokeObjectURL(item.url);
+      renderEditorMedia();
+    };
+    tile.append(label, remove); container.append(tile);
+  });
+}
+
+$('#editor-files').addEventListener('change', event => {
+  const files = Array.from(event.target.files);
+  event.target.value = '';
+  if (!state.editor || editorBusy) return;
+  if (files.length + state.editor.attachments.length > 6) { $('#editor-error').textContent = '첨부는 최대 6개까지 선택할 수 있어요.'; return; }
+  for (const file of files) {
+    const limit = file.type === 'video/mp4' ? 50 : 10;
+    if (!['image/jpeg', 'image/png', 'video/mp4'].includes(file.type) || !file.size || file.size > limit * 1024 * 1024) {
+      $('#editor-error').textContent = 'JPEG·PNG 사진은 10MB, MP4 동영상은 50MB까지 첨부할 수 있어요.'; return;
+    }
+  }
+  $('#editor-error').textContent = '';
+  for (const file of files) state.editor.attachments.push({file, type: file.type, url: URL.createObjectURL(file)});
+  renderEditorMedia();
+});
+
+async function uploadAttachments() {
+  const attachments = state.editor.attachments;
+  for (let index = 0; index < attachments.length; index++) {
+    const item = attachments[index];
+    if (item.mediaId) continue;
+    $('#upload-status').textContent = `첨부 업로드 중 ${index + 1} / ${attachments.length} · ${item.file.name}`;
+    const response = await fetch('/api/v1/media', {method: 'POST',
+      headers: {Authorization: `Bearer ${state.token}`, 'Content-Type': item.type}, body: item.file});
+    if (!response.ok) {
+      const messages = {413: '파일이 너무 커요.', 415: '파일 형식을 확인해 주세요. JPEG·PNG·MP4 파일만 지원해요.', 401: '다시 로그인해 주세요.', 403: '파일 업로드 권한이 없어요.'};
+      throw new Error(messages[response.status] || '업로드에 실패했어요. 다시 저장하면 실패한 파일부터 재시도해요.');
+    }
+    item.mediaId = (await response.json()).mediaId;
+  }
+  $('#upload-status').textContent = '게시글 저장 중…';
+  return attachments.map(item => item.mediaId);
+}
+
+$('#editor-dialog').addEventListener('cancel', event => { if (editorBusy) event.preventDefault(); });
+$('#editor-dialog').addEventListener('close', () => {
+  for (const item of state.editor?.attachments || []) if (item.url) URL.revokeObjectURL(item.url);
+  state.editor = null;
+});
 function tokenKey(token) {
   try { const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(part)).sub || ''; } catch { return ''; }
 }
@@ -59,6 +155,8 @@ function syncChrome() {
   $('#feed-description').textContent = state.mode === 'demo' ? '함께 나누는 오늘의 순간' : state.target ? `회원 ${state.target}의 기록` : '로그인 후 내 기록을 확인해 보세요';
 }
 function renderPosts() {
+  for (const url of feedMediaUrls) URL.revokeObjectURL(url);
+  feedMediaUrls.clear();
   $('#feed').innerHTML = state.posts.map(post => {
     const mine = post.userKey === me();
     const image = safeImage(post.thumbnailUrl);
@@ -66,10 +164,12 @@ function renderPosts() {
     return `<article class="post-card" data-post="${esc(post.postId)}">
       <div class="post-header"><div class="avatar">${esc(nameOf(post).slice(0, 1))}</div><div><div class="post-author">${esc(nameOf(post))}</div><div class="post-time">${esc(timeOf(post.createdAt))}</div></div>${mine ? '<div class="post-actions"><button class="icon-button" data-action="edit-post">수정</button><button class="icon-button" data-action="delete-post">삭제</button></div>' : ''}</div>
       ${image ? `<div class="post-image"><img src="${esc(image)}" alt="게시물 사진" loading="lazy" referrerpolicy="no-referrer"></div>` : post.art ? `<div class="post-image ${esc(post.art)}" aria-label="데모 일러스트"><span class="pet-emoji">${esc(post.emoji)}</span><span class="art-label">LITTLE MOMENTS, BIG LOVE</span></div>` : ''}
+      ${(post.mediaIds || []).length ? `<div class="post-media">${post.mediaIds.map((id, index) => `<div class="media-frame"><button type="button" class="button quiet load-attachment" data-post-id="${esc(post.postId)}" data-media-id="${esc(id)}">사진·동영상 ${index + 1} 보기</button></div>`).join('')}</div>` : ''}
       <div class="post-content"><p>${esc(post.content)}</p></div><div class="post-footer"><button class="comment-toggle" data-action="comments" aria-expanded="false">☏ 댓글 ${count} <span>· 이야기 나누기</span></button><span class="post-id">RECORD ${String(post.postId).padStart(3, '0')}</span></div><div class="comments" hidden></div></article>`;
   }).join('') || '<div class="empty-state"><span>🌱</span>아직 남긴 기록이 없어요.<br>첫 번째 순간을 남겨보세요.</div>';
   $('#more-posts').hidden = !state.cursor;
   $('#feed').querySelectorAll('img').forEach(img => img.addEventListener('error', () => { img.closest('.post-image').hidden = true; }));
+  $('#feed').querySelectorAll('.load-attachment').forEach(button => button.addEventListener('click', () => loadAttachment(button)));
 }
 async function loadPosts(append = false) {
   const generation = ++state.generation;
@@ -128,7 +228,18 @@ function openEditor(kind, postId, commentId) {
   if (!canWrite()) return;
   const post = state.posts.find(p => p.postId === postId);
   const comment = state.commentPages.get(postId)?.comments.find(c => c.commentId === commentId);
-  state.editor = {kind, postId, commentId};
+  state.editor = {kind, postId, commentId, attachments: (kind === 'post' ? post?.mediaIds || [] : []).map(mediaId => ({mediaId}))};
+  const editor = state.editor;
+  $('#media-field').hidden = kind === 'comment';
+  $('#editor-files').value = '';
+  $('#editor-files').disabled = state.mode === 'demo';
+  $('#media-help').textContent = state.mode === 'demo' ? '사진·동영상 업로드는 실제 API 모드에서 사용할 수 있어요.' : '최대 6개 · 사진 10MB / 동영상 50MB · JPEG, PNG, MP4';
+  $('#upload-status').textContent = '';
+  renderEditorMedia();
+  for (const item of editor.attachments) fetchMedia(postId, item.mediaId).then(media => {
+    if (state.editor !== editor || !editor.attachments.includes(item)) { URL.revokeObjectURL(media.url); return; }
+    Object.assign(item, media); renderEditorMedia();
+  }).catch(() => { /* Keep the existing ID even if preview loading fails. */ });
   $('#editor-title').textContent = kind === 'comment' ? '댓글 수정하기' : postId ? '순간 수정하기' : '순간 남기기';
   $('#editor-content').maxLength = kind === 'comment' ? 1000 : 5000;
   $('#editor-content').value = kind === 'comment' ? comment.content : post?.content || '';
@@ -140,12 +251,16 @@ function openEditor(kind, postId, commentId) {
 }
 $('#editor-form').addEventListener('submit', async event => {
   event.preventDefault();
+  if (editorBusy) return;
   const content = $('#editor-content').value;
   if (!content.trim()) { $('#editor-error').textContent = '내용을 입력해 주세요.'; return; }
   const {kind, postId, commentId} = state.editor;
   const thumbnailUrl = $('#editor-thumbnail').value.trim() || null;
   if (kind === 'post' && thumbnailUrl && !safeImage(thumbnailUrl)) { $('#editor-error').textContent = 'http 또는 https 사진 URL을 입력해 주세요.'; return; }
   $('#editor-submit').disabled = true;
+  editorBusy = true;
+  $('#editor-dialog').querySelectorAll('input, textarea, [data-close]').forEach(node => { node.disabled = true; });
+  renderEditorMedia();
   try {
     if (state.mode === 'demo') {
       if (kind === 'comment') Object.assign(demoData.comments.find(c => c.commentId === commentId), {content, updatedAt: new Date().toISOString()});
@@ -154,13 +269,21 @@ $('#editor-form').addEventListener('submit', async event => {
       saveDemo();
     } else {
       const path = kind === 'comment' ? `/posts/${postId}/comments/${commentId}` : postId ? `/posts/${postId}` : '/posts';
-      await api(path, postId ? 'PUT' : 'POST', kind === 'comment' ? {content} : {content, thumbnailUrl});
+      const mediaIds = kind === 'post' ? await uploadAttachments() : undefined;
+      await api(path, postId ? 'PUT' : 'POST', kind === 'comment' ? {content} : {content, thumbnailUrl, mediaIds});
     }
     $('#editor-dialog').close();
     if (kind === 'comment') await loadComments($(`[data-post="${postId}"]`));
     else { state.target = me(); await loadPosts(); }
   } catch (error) { $('#editor-error').textContent = error.message; }
-  finally { $('#editor-submit').disabled = false; }
+  finally {
+    editorBusy = false;
+    $('#editor-submit').disabled = false;
+    $('#editor-dialog').querySelectorAll('input, textarea, [data-close]').forEach(node => { node.disabled = false; });
+    $('#editor-files').disabled = state.mode === 'demo';
+    $('#upload-status').textContent = '';
+    renderEditorMedia();
+  }
 });
 $('#feed').addEventListener('submit', async event => {
   if (!event.target.matches('.comment-form')) return;

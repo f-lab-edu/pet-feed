@@ -12,7 +12,7 @@ class PostFacadeTest {
     private final PostFeignClient posts = mock(PostFeignClient.class);
     private final UserFeignClient users = mock(UserFeignClient.class);
     private final CommentFeignClient comments = mock(CommentFeignClient.class);
-    private final PostFacade facade = new PostFacade(posts, users, comments);
+    private final PostFacade facade = new PostFacade(posts, users, mock(MediaFeignClient.class));
 
     @Test void withdrawnAuthorIsDisplayedAndOriginalPostIsPreserved() {
         var original = PostDetailResponse.of(1L, "owner", "hello", null, null, null, null);

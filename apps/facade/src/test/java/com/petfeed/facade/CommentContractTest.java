@@ -32,7 +32,7 @@ class CommentContractTest {
                 .withRequestBody(matchingJsonPath("$.content", equalTo("hello"))));
     }
 
-    @Test void deletionCallsInternalCommentCleanupAndPreservesPostRequester() throws Exception {
+    @Test void deletionOnlyCallsPostServiceAndPreservesPostRequester() throws Exception {
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/users/owner/author"))
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"owner\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/api/v1/posts/1"))
@@ -42,7 +42,7 @@ class CommentContractTest {
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.delete(urlEqualTo("/api/v1/posts/1"))
                 .willReturn(aResponse().withStatus(204)));
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/posts/1").header("X-User-Key", "owner")).andExpect(status().isNoContent());
-        verify(deleteRequestedFor(urlEqualTo("/internal/v1/posts/1/comments")));
+        verify(0, deleteRequestedFor(urlEqualTo("/internal/v1/posts/1/comments")));
         verify(deleteRequestedFor(urlEqualTo("/api/v1/posts/1")).withHeader("X-User-Key", equalTo("owner")));
     }
 }

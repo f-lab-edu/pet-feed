@@ -8,6 +8,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestClient;
 
@@ -31,6 +32,14 @@ public class GatewayController {
     @Value("${services.facade-service.url}")
     private String facadeServiceUrl;
 
+    @PostMapping("/api/v1/media")
+    public ResponseEntity<byte[]> upload(HttpServletRequest request) throws IOException {
+        byte[] body = request.getInputStream().readNBytes(50 * 1024 * 1024 + 1);
+        if (body.length > 50 * 1024 * 1024)
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
+        return proxy(request, body);
+    }
+
     @RequestMapping("/api/**")
     public ResponseEntity<byte[]> proxy(HttpServletRequest request,
                                         @RequestBody(required = false) byte[] body) {
@@ -48,11 +57,11 @@ public class GatewayController {
 
         HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
-        return restClient.method(method)
+        var outbound = restClient.method(method)
                 .uri(targetUrl)
-                .headers(h -> h.addAll(headers))
-                .body(body)
-                .retrieve()
+                .headers(h -> h.addAll(headers));
+        if (body != null) outbound.body(body);
+        return outbound.retrieve()
                 .onStatus(HttpStatusCode::isError, this::propagateDownstreamError)
                 .toEntity(byte[].class);
     }
