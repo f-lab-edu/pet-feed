@@ -16,8 +16,14 @@ public class PostDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private AuthorResponse author;
+    private java.util.List<String> mediaIds = java.util.List.of();
+
+    public static PostDetailResponse of(Long postId, String userKey, String content, String thumbnailUrl,
+            LocalDateTime createdAt, LocalDateTime updatedAt, AuthorResponse author) {
+        return of(postId, userKey, content, thumbnailUrl, createdAt, updatedAt, author, java.util.List.of());
+    }
 
     public PostDetailResponse withAuthor(AuthorResponse author) {
-        return of(postId, userKey, content, thumbnailUrl, createdAt, updatedAt, author);
+        return of(postId, userKey, content, thumbnailUrl, createdAt, updatedAt, author, mediaIds);
     }
 }

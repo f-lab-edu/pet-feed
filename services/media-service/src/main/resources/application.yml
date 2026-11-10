@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: media-service
+  datasource:
+    url: jdbc:h2:mem:mediadb
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+server:
+  port: 8086
+media:
+  storage-path: ${MEDIA_STORAGE_PATH:./media-storage}

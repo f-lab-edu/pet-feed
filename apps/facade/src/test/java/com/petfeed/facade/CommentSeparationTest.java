@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -17,7 +17,7 @@ class CommentSeparationTest {
     private final PostFeignClient posts = mock(PostFeignClient.class);
     private final CommentFeignClient comments = mock(CommentFeignClient.class);
     private final UserFeignClient users = mock(UserFeignClient.class);
-    private final PostFacade postFacade = new PostFacade(posts, users, comments);
+    private final PostFacade postFacade = new PostFacade(posts, users, mock(MediaFeignClient.class));
     private final CommentFacade commentFacade = new CommentFacade(comments, users, posts);
 
     private void activeOwner() {
@@ -51,44 +51,20 @@ class CommentSeparationTest {
         verifyNoInteractions(comments, users);
     }
 
-    @Test void unauthorizedPostDeletionDoesNotTouchComments() {
-        when(users.getAuthor("other")).thenReturn(AuthorResponse.of(MemberStatus.ACTIVE, "other"));
-        when(posts.get(1L)).thenReturn(PostDetailResponse.of(1L, "owner", "post", null, null, null, null));
-        assertThatThrownBy(() -> postFacade.delete(1L, "other")).isInstanceOf(ResponseStatusException.class);
+    @Test void deletionDelegatesOwnershipAndCompletionToPostService() {
+        activeOwner();
+        postFacade.delete(1L, "owner");
+        verify(posts).delete(1L, "owner");
+        verify(posts, never()).get(anyLong());
         verifyNoInteractions(comments);
-        verify(posts, never()).delete(anyLong(), anyString());
     }
 
-    @Test void commentCleanupFailureKeepsPostAndRetryCompletesDeletion() {
+    @Test void failedPostDeletionDoesNotTouchComments() {
         activeOwner();
-        var failure = new IllegalStateException("comment service unavailable");
-        doThrow(failure).doNothing().when(comments).close(1L);
-        assertThatThrownBy(() -> postFacade.delete(1L, "owner")).isSameAs(failure);
-        verify(posts, never()).delete(anyLong(), anyString());
-        postFacade.delete(1L, "owner");
-        var order = inOrder(comments, posts);
-        order.verify(posts).get(1L);
-        order.verify(comments).close(1L);
-        order.verify(posts).get(1L);
-        order.verify(comments).close(1L);
-        order.verify(posts).delete(1L, "owner");
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN)).when(posts).delete(1L, "owner");
+        assertThatThrownBy(() -> postFacade.delete(1L, "owner")).isInstanceOf(ResponseStatusException.class);
+        verifyNoInteractions(comments);
     }
-
-    @Test void failedPostDeletionLeavesCommentsClosedAndRetryFinishes() {
-        activeOwner();
-        var closed = new AtomicBoolean();
-        var exists = new AtomicBoolean(true);
-        doAnswer(call -> { closed.set(true); return null; }).when(comments).close(1L);
-        doThrow(new IllegalStateException("post service unavailable"))
-                .doAnswer(call -> { exists.set(false); return null; }).when(posts).delete(1L, "owner");
-        assertThatThrownBy(() -> postFacade.delete(1L, "owner")).isInstanceOf(IllegalStateException.class);
-        assertThat(closed).isTrue();
-        assertThat(exists).isTrue();
-        postFacade.delete(1L, "owner");
-        assertThat(exists).isFalse();
-        verify(comments, times(2)).close(1L);
-    }
-
     @Test void countsAreComposedInOneCallAndOriginalSummaryIsPreserved() {
         var facade = new UserFacade(users, posts, comments);
         when(users.getAuthor("owner")).thenReturn(AuthorResponse.of(MemberStatus.ACTIVE, "owner"));

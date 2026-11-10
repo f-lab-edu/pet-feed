@@ -6,6 +6,8 @@ server:
   port: 8083
 
 services:
+  media-service:
+    url: http://localhost:8086
   user-service:
     url: http://localhost:8081
   post-service:

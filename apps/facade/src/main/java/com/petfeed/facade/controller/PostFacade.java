@@ -4,7 +4,7 @@ import com.petfeed.domain.dto.request.SavePostRequest;
 import com.petfeed.domain.dto.response.*;
 import com.petfeed.facade.client.PostFeignClient;
 import com.petfeed.facade.client.UserFeignClient;
-import com.petfeed.facade.client.CommentFeignClient;
+import com.petfeed.facade.client.MediaFeignClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -15,10 +15,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class PostFacade {
     private final PostFeignClient posts;
     private final UserFeignClient users;
-    private final CommentFeignClient comments;
+    private final MediaFeignClient media;
 
     public PostDetailResponse create(String key, SavePostRequest request) {
         var author = requireActive(key);
+        validateMedia(key, request);
         return posts.create(key, request).withAuthor(author);
     }
 
@@ -29,15 +30,12 @@ public class PostFacade {
 
     public void update(Long id, String key, SavePostRequest request) {
         requireActive(key);
+        validateMedia(key, request);
         posts.update(id, key, request);
     }
 
     public void delete(Long id, String key) {
         requireActive(key);
-        var post = posts.get(id);
-        if (!key.equals(post.getUserKey()))
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the author can delete this post");
-        comments.close(id);
         posts.delete(id, key);
     }
 
@@ -46,5 +44,10 @@ public class PostFacade {
         if (author.getStatus() != MemberStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Withdrawn members cannot change posts");
         return author;
+    }
+
+    private void validateMedia(String key, SavePostRequest request) {
+        if (request.getMediaIds() != null && !request.getMediaIds().isEmpty())
+            media.validate(key, request.getMediaIds());
     }
 }

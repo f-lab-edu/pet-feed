@@ -1,4 +1,6 @@
 services:
+  media-service:
+    url: http://localhost:${wiremock.server.port}
   user-service:
     url: http://localhost:${wiremock.server.port}
   post-service:

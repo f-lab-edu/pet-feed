@@ -1,0 +1,9 @@
+plugins {
+    id 'base-spring.data'
+    id 'base-spring.web'
+    id 'org.springframework.boot'
+}
+dependencies {
+    implementation project(':common-domain')
+    runtimeOnly 'com.h2database:h2'
+}
