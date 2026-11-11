@@ -89,4 +89,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return Collections.enumeration(allHeaders.keySet());
         }
     }
+
 }
