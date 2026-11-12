@@ -51,7 +51,7 @@ public final class MediaValidator {
                 if (data.length - offset < 16) throw invalid();
                 size = ByteBuffer.wrap(data, offset + 8, 8).getLong();
                 header = 16;
-            } else if (size == 0) size = data.length - offset;
+            } else if (size == 0) size = (long) data.length - offset;
             if (size < header || size > data.length - offset) throw invalid();
             if (offset == 0 && !type.equals("ftyp")) throw invalid();
             if (type.equals("ftyp")) {
