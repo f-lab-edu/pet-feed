@@ -29,7 +29,9 @@ function png() {
 let token = '';
 async function request(path, {method = 'GET', body, type, headers = {}, expected = 200} = {}) {
   // Only the local smoke-test routes may receive requests, including server-returned IDs.
-  assert.match(path, new RegExp("^/(?:users/signup|auth/login|media|posts(?:/[1-9]\\d*(?:/media/[0-9a-f-]{36})?)?)$"));
+  if (!/^\/(?:users\/signup|auth\/login|media|posts(?:\/[1-9]\d*(?:\/media\/[0-9a-f-]{36})?)?)$/.test(path)) {
+    throw new Error('Invalid smoke-test API path');
+  }
   const response = await fetch(base + path, {method, redirect: 'error',
     headers: {...(token ? {Authorization: `Bearer ${token}`} : {}),
       ...(body === undefined ? {} : {'Content-Type': type || 'application/json'}), ...headers},
