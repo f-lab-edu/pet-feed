@@ -51,13 +51,15 @@ await request('/media', {method: 'POST', type: 'image/png', body: Buffer.from('n
 const post = await (await request('/posts', {method: 'POST', expected: 201,
   body: {content: '사진과 동영상 업로드 검증', mediaIds: [photoId, videoId]}})).json();
 assert.deepEqual(post.mediaIds, [photoId, videoId]);
-assert.deepEqual(Buffer.from(await (await request(`/posts/${post.postId}/media/${photoId}`)).arrayBuffer()), photo);
-const part = await request(`/posts/${post.postId}/media/${videoId}`, {headers: {Range: 'bytes=0-31'}, expected: 206});
+const postId = Number(post.postId);
+assert.ok(Number.isSafeInteger(postId) && postId > 0, 'Expected a positive integer post ID');
+assert.deepEqual(Buffer.from(await (await request(`/posts/${postId}/media/${encodeURIComponent(photoId)}`)).arrayBuffer()), photo);
+const part = await request(`/posts/${postId}/media/${encodeURIComponent(videoId)}`, {headers: {Range: 'bytes=0-31'}, expected: 206});
 assert.equal(part.headers.get('content-range'), `bytes 0-31/${video.length}`);
 assert.deepEqual(Buffer.from(await part.arrayBuffer()), video.subarray(0, 32));
-await request(`/posts/${post.postId}`, {method: 'PUT', body: {content: '첨부 교체', mediaIds: [videoId]}, expected: 204});
-assert.deepEqual((await (await request(`/posts/${post.postId}`)).json()).mediaIds, [videoId]);
-await request(`/posts/${post.postId}/media/${photoId}`, {expected: 404});
-await request(`/posts/${post.postId}`, {method: 'DELETE', expected: 204});
-await request(`/posts/${post.postId}/media/${videoId}`, {expected: 404});
+await request(`/posts/${postId}`, {method: 'PUT', body: {content: '첨부 교체', mediaIds: [videoId]}, expected: 204});
+assert.deepEqual((await (await request(`/posts/${postId}`)).json()).mediaIds, [videoId]);
+await request(`/posts/${postId}/media/${encodeURIComponent(photoId)}`, {expected: 404});
+await request(`/posts/${postId}`, {method: 'DELETE', expected: 204});
+await request(`/posts/${postId}/media/${encodeURIComponent(videoId)}`, {expected: 404});
 console.log('PASS: authenticated photo/video upload, invalid file rejection, ordered attachments, byte range, replacement and deleted-post access denial.');
