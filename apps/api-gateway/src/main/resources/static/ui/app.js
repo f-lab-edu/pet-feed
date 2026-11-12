@@ -18,6 +18,11 @@ const seed = () => ({
 });
 let demoData = readStorage(localStorage, 'petfeed-demo-v1', null);
 if (!demoData || !Array.isArray(demoData.posts) || !Array.isArray(demoData.comments)) demoData = seed();
+// Preserve ownership of records saved before the member API rename.
+for (const record of [...demoData.posts, ...demoData.comments]) {
+  if (record.memberKey == null && typeof record.userKey === 'string') record.memberKey = record.userKey;
+}
+persist(localStorage, 'petfeed-demo-v1', demoData);
 const state = { mode: 'demo', token: readStorage(sessionStorage, 'petfeed-token', ''), memberKey: '', target: '', posts: [], cursor: 0, busy: false, generation: 0, commentPages: new Map(), editor: null, signup: false, deletion: null };
 const feedMediaUrls = new Set();
 let editorBusy = false;
@@ -377,17 +382,17 @@ $('#auth-form').addEventListener('submit', async event => {
   } catch (error) { $('#auth-error').textContent = error.message; }
   finally { $('#auth-submit').disabled = false; }
 });
-$('#account-button').addEventListener('click', () => {
-  if (state.mode === 'api' && state.token) { state.token = ''; state.memberKey = ''; state.target = ''; persist(sessionStorage, 'petfeed-token', ''); loadPosts(); }
+$('#account-button').addEventListener('click', async () => {
+  if (state.mode === 'api' && state.token) { state.token = ''; state.memberKey = ''; state.target = ''; persist(sessionStorage, 'petfeed-token', ''); await loadPosts(); }
   else openAuth();
 });
-$('#mode-button').addEventListener('click', () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = state.mode === 'demo' ? '' : state.memberKey; loadPosts(); });
+$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = state.mode === 'demo' ? '' : state.memberKey; await loadPosts(); });
 $('#compose-button').addEventListener('click', () => openEditor('post'));
 $('#write-button').addEventListener('click', () => openEditor('post'));
 $('#refresh-button').addEventListener('click', () => loadPosts());
 $('#more-posts').addEventListener('click', () => loadPosts(true));
-$('#home-button').addEventListener('click', () => { state.target = state.mode === 'demo' ? '' : me(); loadPosts(); });
-$('#mine-button').addEventListener('click', () => { if (!canWrite()) return; state.target = me(); loadPosts(); });
-$('#search-form').addEventListener('submit', event => { event.preventDefault(); state.target = $('#member-key').value.trim(); loadPosts(); });
+$('#home-button').addEventListener('click', async () => { state.target = state.mode === 'demo' ? '' : me(); await loadPosts(); });
+$('#mine-button').addEventListener('click', async () => { if (!canWrite()) return; state.target = me(); await loadPosts(); });
+$('#search-form').addEventListener('submit', async event => { event.preventDefault(); state.target = $('#member-key').value.trim(); await loadPosts(); });
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
-loadPosts();
+loadPosts().catch(error => notice(error.message, true));
