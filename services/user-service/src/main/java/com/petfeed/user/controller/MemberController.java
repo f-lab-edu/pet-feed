@@ -17,7 +17,7 @@ import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
 
 @RestController
 @RequiredArgsConstructor
-public class UserController {
+public class MemberController {
 
     private final UserService userService;
 

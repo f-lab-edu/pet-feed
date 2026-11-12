@@ -28,6 +28,7 @@ logs/
 .claude/
 
 # Application
+**/media-storage/
 application-local.yml
 application-dev.yml
 application-prod.yml

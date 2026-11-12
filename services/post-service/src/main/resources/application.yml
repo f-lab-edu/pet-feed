@@ -17,3 +17,10 @@ spring:
 
 server:
   port: 8082
+
+comment-service:
+  url: ${COMMENT_SERVICE_URL:http://localhost:8084}
+post:
+  cleanup:
+    enabled: true
+    poll-delay-ms: 5000

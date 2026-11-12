@@ -13,6 +13,27 @@ import org.springframework.web.server.ResponseStatusException;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post {
+    @Version
+    private long version;
+    @Column(nullable = false)
+    private boolean deleted;
+
+    @ElementCollection
+    @CollectionTable(name = "post_media", joinColumns = @JoinColumn(name = "post_id"))
+    @OrderColumn(name = "display_order")
+    @Column(name = "media_id", nullable = false, length = 36)
+    private java.util.List<String> mediaIds = new java.util.ArrayList<>();
+
+    public void replaceMedia(java.util.List<String> ids) {
+        if (ids == null) return;
+        if (ids.size() > 6 || new java.util.HashSet<>(ids).size() != ids.size()
+                || ids.stream().anyMatch(id -> id == null || !id.matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid attachments");
+        mediaIds.clear();
+        mediaIds.addAll(ids);
+    }
+
+    public void markDeleted() { deleted = true; }
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false, updatable = false)

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 class UserFacadeTest {
     @Mock UserFeignClient users;
     @Mock PostFeignClient posts;
+    @Mock com.petfeed.facade.client.CommentFeignClient comments;
     @InjectMocks UserFacade facade;
 
     @Test

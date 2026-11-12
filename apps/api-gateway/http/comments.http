@@ -1,0 +1,25 @@
+### Create a comment (set postId and commentId to existing IDs)
+@postId = 1
+@commentId = 1
+@baseUrl = http://localhost:8080
+@accessToken = REPLACE_WITH_ACCESS_TOKEN
+POST {{baseUrl}}/api/v1/posts/{{postId}}/comments
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"content": "Hello!"}
+
+### List latest comments; pass nextCursor to fetch the next page
+GET {{baseUrl}}/api/v1/posts/{{postId}}/comments?cursor=0
+Authorization: Bearer {{accessToken}}
+
+### Update own comment
+PUT {{baseUrl}}/api/v1/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"content": "Updated comment"}
+
+### Delete own comment
+DELETE {{baseUrl}}/api/v1/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{accessToken}}

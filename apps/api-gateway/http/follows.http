@@ -1,0 +1,23 @@
+@baseUrl = http://localhost:8080
+@accessToken = REPLACE_WITH_ACCESS_TOKEN
+@targetKey = REPLACE_WITH_TARGET_USER_KEY
+
+### Follow (duplicate: 409, self: 400)
+POST {{baseUrl}}/api/v1/following/{{targetKey}}
+Authorization: Bearer {{accessToken}}
+
+### Unfollow (idempotent)
+DELETE {{baseUrl}}/api/v1/following/{{targetKey}}
+Authorization: Bearer {{accessToken}}
+
+### Active followers; pass nextCursor for the next page
+GET {{baseUrl}}/api/v1/users/{{targetKey}}/followers?cursor=0
+Authorization: Bearer {{accessToken}}
+
+### Active followings
+GET {{baseUrl}}/api/v1/users/{{targetKey}}/followings?cursor=0
+Authorization: Bearer {{accessToken}}
+
+### Profile includes active relationship counts and requester following flag
+GET {{baseUrl}}/api/v1/users/{{targetKey}}
+Authorization: Bearer {{accessToken}}
