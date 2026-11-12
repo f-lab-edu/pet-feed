@@ -29,7 +29,7 @@ function png() {
 let token = '';
 async function request(path, {method = 'GET', body, type, headers = {}, expected = 200} = {}) {
   // Only the local smoke-test routes may receive requests, including server-returned IDs.
-  if (!/^\/(?:users\/signup|auth\/login|media|posts(?:\/[1-9]\d*(?:\/media\/[0-9a-f-]{36})?)?)$/.test(path)) {
+  if (!/^\/(?:members\/signup|auth\/login|media|posts(?:\/[1-9]\d*(?:\/media\/[0-9a-f-]{36})?)?)$/.test(path)) {
     throw new Error('Invalid smoke-test API path');
   }
   const response = await fetch(base + path, {method, redirect: 'error',
@@ -43,7 +43,7 @@ async function request(path, {method = 'GET', body, type, headers = {}, expected
 await request('/media', {method: 'POST', type: 'image/png', body: png(), expected: 403});
 const nonce = Date.now();
 const login = {email: `media-smoke-${nonce}@example.test`, password: `LocalTest!${nonce}`};
-await request('/users/signup', {method: 'POST', body: {...login, nickname: '미디어 검증', phone: '01000000000'}, expected: 201});
+await request('/members/signup', {method: 'POST', body: {...login, nickname: '미디어 검증', phone: '01000000000'}, expected: 201});
 token = (await (await request('/auth/login', {method: 'POST', body: login})).json()).accessToken;
 assert.ok(token);
 const photo = png();

@@ -1,7 +1,7 @@
 package com.petfeed.media.controller;
 
 import com.petfeed.media.service.*;
-import com.petfeed.domain.dto.response.MediaResponse;
+import com.petfeed.contracts.dto.response.MediaResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.util.List;
-import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,13 +20,13 @@ public class MediaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MediaResponse upload(@RequestHeader(X_USER_KEY) String owner, HttpServletRequest request) throws IOException {
+    public MediaResponse upload(@RequestHeader(X_MEMBER_KEY) String owner, HttpServletRequest request) throws IOException {
         byte[] body = request.getInputStream().readNBytes(MediaValidator.MAX_BYTES + 1);
         return media.upload(owner, request.getContentType(), body);
     }
 
     @PostMapping("/validate")
-    public List<MediaResponse> validate(@RequestHeader(X_USER_KEY) String owner, @RequestBody List<String> ids) {
+    public List<MediaResponse> validate(@RequestHeader(X_MEMBER_KEY) String owner, @RequestBody List<String> ids) {
         return media.validateOwnership(owner, ids);
     }
 

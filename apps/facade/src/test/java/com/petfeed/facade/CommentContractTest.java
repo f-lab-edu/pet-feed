@@ -17,32 +17,32 @@ class CommentContractTest {
     @Autowired MockMvc mvc;
 
     @Test void createChecksPostAndForwardsIdentityToCommentApi() throws Exception {
-        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/users/reader/author"))
+        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/members/reader/author"))
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"reader\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/api/v1/posts/1"))
-                .willReturn(okJson("{\"postId\":1,\"userKey\":\"owner\"}")));
+                .willReturn(okJson("{\"postId\":1,\"memberKey\":\"owner\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.post(urlEqualTo("/api/v1/posts/1/comments"))
                 .willReturn(aResponse().withStatus(201).withHeader("Content-Type", "application/json")
-                        .withBody("{\"commentId\":2,\"postId\":1,\"userKey\":\"reader\",\"content\":\"hello\"}")));
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/posts/1/comments").header("X-User-Key", "reader")
+                        .withBody("{\"commentId\":2,\"postId\":1,\"memberKey\":\"reader\",\"content\":\"hello\"}")));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/posts/1/comments").header("X-Member-Key", "reader")
                 .contentType("application/json").content("{\"content\":\"hello\"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.author.displayName").value("reader"));
         verify(postRequestedFor(urlEqualTo("/api/v1/posts/1/comments"))
-                .withHeader("X-User-Key", equalTo("reader"))
+                .withHeader("X-Member-Key", equalTo("reader"))
                 .withRequestBody(matchingJsonPath("$.content", equalTo("hello"))));
     }
 
     @Test void deletionOnlyCallsPostServiceAndPreservesPostRequester() throws Exception {
-        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/users/owner/author"))
+        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/members/owner/author"))
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"owner\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/api/v1/posts/1"))
-                .willReturn(okJson("{\"postId\":1,\"userKey\":\"owner\"}")));
+                .willReturn(okJson("{\"postId\":1,\"memberKey\":\"owner\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.delete(urlEqualTo("/internal/v1/posts/1/comments"))
                 .willReturn(aResponse().withStatus(204)));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.delete(urlEqualTo("/api/v1/posts/1"))
                 .willReturn(aResponse().withStatus(204)));
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/posts/1").header("X-User-Key", "owner")).andExpect(status().isNoContent());
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/posts/1").header("X-Member-Key", "owner")).andExpect(status().isNoContent());
         verify(0, deleteRequestedFor(urlEqualTo("/internal/v1/posts/1/comments")));
-        verify(deleteRequestedFor(urlEqualTo("/api/v1/posts/1")).withHeader("X-User-Key", equalTo("owner")));
+        verify(deleteRequestedFor(urlEqualTo("/api/v1/posts/1")).withHeader("X-Member-Key", equalTo("owner")));
     }
 }

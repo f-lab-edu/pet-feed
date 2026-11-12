@@ -1,7 +1,7 @@
 package com.petfeed.post.service;
 
-import com.petfeed.domain.dto.request.SavePostRequest;
-import com.petfeed.domain.dto.response.*;
+import com.petfeed.contracts.dto.request.SavePostRequest;
+import com.petfeed.contracts.dto.response.*;
 import com.petfeed.post.domain.Post;
 import com.petfeed.post.domain.CommentCleanup;
 import com.petfeed.post.repository.PostRepository;
@@ -22,8 +22,8 @@ public class PostService {
     private final CommentCleanupRepository cleanup;
 
     @Transactional
-    public PostDetailResponse create(String userKey, SavePostRequest request) {
-        var post = Post.create(userKey, request.getContent(), request.getThumbnailUrl());
+    public PostDetailResponse create(String memberKey, SavePostRequest request) {
+        var post = Post.create(memberKey, request.getContent(), request.getThumbnailUrl());
         post.replaceMedia(request.getMediaIds());
         return detail(posts.save(post));
     }
@@ -46,14 +46,14 @@ public class PostService {
         cleanup.save(new CommentCleanup(id));
     }
 
-    public long count(String userKey) { return posts.countByUserKeyAndDeletedFalse(userKey); }
+    public long count(String memberKey) { return posts.countByMemberKeyAndDeletedFalse(memberKey); }
 
-    public PostListResponse list(String userKey, Long cursor) {
+    public PostListResponse list(String memberKey, Long cursor) {
         if (cursor == null || cursor < 0)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cursor must be nonnegative");
         var page = PageRequest.of(0, PAGE_SIZE + 1);
-        var found = cursor == 0 ? posts.findByUserKeyAndDeletedFalseOrderByIdDesc(userKey, page)
-                : posts.findByUserKeyAndDeletedFalseAndIdLessThanOrderByIdDesc(userKey, cursor, page);
+        var found = cursor == 0 ? posts.findByMemberKeyAndDeletedFalseOrderByIdDesc(memberKey, page)
+                : posts.findByMemberKeyAndDeletedFalseAndIdLessThanOrderByIdDesc(memberKey, cursor, page);
         boolean hasNext = found.size() > PAGE_SIZE;
         var visible = found.stream().limit(PAGE_SIZE).map(post -> PostSummary.of(post.getId(),
                 post.getThumbnailUrl(), 0, 0, post.getCreatedAt(), post.getUpdatedAt(), null)).toList();
@@ -66,7 +66,7 @@ public class PostService {
     }
 
     private PostDetailResponse detail(Post post) {
-        return PostDetailResponse.of(post.getId(), post.getUserKey(), post.getContent(), post.getThumbnailUrl(),
+        return PostDetailResponse.of(post.getId(), post.getMemberKey(), post.getContent(), post.getThumbnailUrl(),
                 post.getCreatedAt(), post.getUpdatedAt(), null, java.util.List.copyOf(post.getMediaIds()));
     }
 }

@@ -1,7 +1,7 @@
 package com.petfeed.comment.service;
 
-import com.petfeed.domain.dto.request.SaveCommentRequest;
-import com.petfeed.domain.dto.response.*;
+import com.petfeed.contracts.dto.request.SaveCommentRequest;
+import com.petfeed.contracts.dto.response.*;
 import com.petfeed.comment.domain.*;
 import com.petfeed.comment.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -79,7 +79,7 @@ public class CommentService {
     }
 
     private CommentResponse response(Comment comment) {
-        return CommentResponse.of(comment.getId(), comment.getPostId(), comment.getUserKey(), comment.getContent(),
+        return CommentResponse.of(comment.getId(), comment.getPostId(), comment.getMemberKey(), comment.getContent(),
                 comment.getCreatedAt(), comment.getUpdatedAt(), null);
     }
 }

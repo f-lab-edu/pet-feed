@@ -2,13 +2,13 @@ spring:
   application:
     name: comment-service
   datasource:
-    url: jdbc:h2:mem:commentdb
+    url: ${COMMENT_DB_URL:jdbc:h2:file:./data/commentdb;DB_CLOSE_ON_EXIT=FALSE}
     driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
 
 server:
   port: 8084

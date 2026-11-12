@@ -8,9 +8,13 @@
 
 ## 1. 용어와 범위
 
+회원 API는 `/api/v1/members`, JSON `memberKey`·`members`, 내부 인증 헤더 `X-Member-Key`로 통일했다. 이전 `/users`·`userKey`·`users`·`X-User-Key` 별칭은 제공하지 않으며 클라이언트도 함께 전환한다. 로그인 경로 `/api/v1/auth/login`은 그대로다.
+
+DTO는 `api-contracts`에서 공유한다. 회원 도메인의 `MemberStatus`와 API 작성자 상태 `AuthorStatus`는 별도 타입이고 회원 서비스가 명시적으로 변환한다. 회원 서비스는 `MemberInfoResponse`로 기본 정보만 반환하며, Facade가 게시글 수와 팔로우 통계를 조합해 `MemberProfileResponse`를 만든다. 기존 DB 컬럼 `user_key`는 데이터 보존을 위해 매핑으로 유지한다.
+
 | 용어 | 의미 | 현재 구현 |
 | --- | --- | --- |
-| 회원(Member) | 가입·로그인하고 기록을 작성하는 사용자 | user-service의 영속 엔티티 |
+| 회원(Member) | 가입·로그인하고 기록을 작성하는 사용자 | member-service의 영속 엔티티 |
 | 게시물(Post) | 회원이 작성하는 본문과 선택적 썸네일 URL | post-service의 영속 엔티티 |
 | 댓글(Comment) | 특정 게시물에 회원이 남기는 본문 | comment-service의 영속 엔티티 |
 | 미디어(MediaFile) | 업로드된 사진·동영상 | media-service의 파일 및 메타데이터. [미디어 명세](media-domain.md) 참조 |
@@ -23,8 +27,8 @@
 
 ```mermaid
 erDiagram
-    MEMBER ||--o{ POST : "작성 (userKey 논리 참조)"
-    MEMBER ||--o{ COMMENT : "작성 (userKey 논리 참조)"
+    MEMBER ||--o{ POST : "작성 (memberKey 논리 참조)"
+    MEMBER ||--o{ COMMENT : "작성 (memberKey 논리 참조)"
     POST ||--o{ COMMENT : "포함 (postId 논리 참조)"
     MEMBER ||--o{ FOLLOW_RELATION : "followerKey 논리 참조"
     MEMBER ||--o{ FOLLOW_RELATION : "followingKey 논리 참조"
@@ -32,13 +36,13 @@ erDiagram
 
 - 회원 한 명은 여러 게시물과 댓글을 작성할 수 있다. 게시물과 댓글에는 각각 한 작성자 키가 저장된다.
 - 댓글은 정확히 하나의 게시물에 속한다. 댓글의 게시물과 작성자는 생성 후 변경하지 않는다.
-- 회원·게시물·댓글 DB는 서비스별로 분리된다. `Post.userKey`, `Comment.userKey`에는 회원 DB 외래 키가 없으며, 회원 엔티티를 JPA 연관관계로 공유하지 않는다.
+- 회원·게시물·댓글 DB는 서비스별로 분리된다. `Post.memberKey`, `Comment.memberKey`에는 회원 DB 외래 키가 없으며, 회원 엔티티를 JPA 연관관계로 공유하지 않는다.
 - 댓글은 게시물 엔티티 대신 Long postId만 보관하며 서비스 간 외래 키가 없다. Facade가 게시물 존재를 확인하며 각 서비스는 상대 서비스 엔티티나 저장소를 참조하지 않는다.
 - 회원 탈퇴와 게시물 삭제는 다르다. 탈퇴는 회원 상태 변경이며, 게시물 삭제는 게시물을 즉시 숨기고 소속 댓글은 비동기로 물리 삭제한다. 게시물 행은 삭제 상태로 보존한다.
 
 | 구성 요소 | 소유하는 규칙과 데이터 |
 | --- | --- |
-| user-service | 회원 식별, 이메일 중복, 비밀번호 검증, 회원 상태·프로필, 작성자 표시 정보 |
+| member-service | 회원 식별, 이메일 중복, 비밀번호 검증, 회원 상태·프로필, 작성자 표시 정보 |
 | post-service | 게시물 저장, 본문 제약, 게시물 소유자 권한, 게시물 수·커서 조회, 삭제 상태와 댓글 정리 작업·재시도 |
 | comment-service | 댓글 저장, 본문 제약, 댓글 소유자 권한, 댓글 수·커서 조회, 게시물별 댓글 작성 차단·삭제 |
 | media-service | 사진·동영상 검증·저장, 업로더 소유권, 파일 제공 |
@@ -55,7 +59,7 @@ erDiagram
 
 | 필드 | 타입 | 제약·의미 |
 | --- | --- | --- |
-| userKey | String | UUID 문자열, PK. 가입 시 생성 |
+| memberKey | String | UUID 문자열, PK. 가입 시 생성 |
 | email | String | 필수, DB 유니크. 서비스에서 앞뒤 공백 제거 및 소문자로 정규화 |
 | passwordHash | String | 필수. BCrypt 해시 저장, 원문 비밀번호 저장 안 함 |
 | phone | String | 필수. 가입 요청에서 공백 불가. 별도 전화번호 형식 검증 없음 |
@@ -86,12 +90,12 @@ stateDiagram-v2
 
 ## 4. 게시물(Post)
 
-저장 테이블: `posts`. `(userKey, id)` 조회 인덱스를 둔다.
+저장 테이블: `posts`. `(memberKey, id)` 조회 인덱스를 둔다.
 
 | 필드 | 타입 | 제약·의미 |
 | --- | --- | --- |
 | id | Long | 자동 증가 PK. 외부 응답에서는 `postId` |
-| userKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
+| memberKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
 | content | String | 필수, 공백 불가, 최대 5,000자 |
 | thumbnailUrl | String | 선택, 최대 2,048자 |
 | mediaIds | List&lt;String&gt; | 최대 6개, UUID, 중복 불가. post_media에 순서와 함께 저장 |
@@ -116,7 +120,7 @@ stateDiagram-v2
 | --- | --- | --- |
 | id | Long | 자동 증가 PK. 외부 응답에서는 `commentId` |
 | postId | Long | 필수 양수, 게시물 논리 참조, 생성 후 변경 불가 |
-| userKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
+| memberKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
 | content | String | 필수, 공백 불가, 최대 1,000자 |
 | createdAt | LocalDateTime | 생성 시 설정, 변경 불가 |
 | updatedAt | LocalDateTime | 생성·수정 시 설정 |
@@ -135,7 +139,7 @@ stateDiagram-v2
 
 | 항목 | 회원별 게시물 | 게시물별 댓글 |
 | --- | --- | --- |
-| 조회 범위 | 지정 userKey | 지정 postId |
+| 조회 범위 | 지정 memberKey | 지정 postId |
 | 정렬 | ID 내림차순 | ID 내림차순 |
 | 페이지 크기 | 최대 20개 | 최대 20개 |
 | 최초 cursor | 0 | 0 |
@@ -159,11 +163,11 @@ stateDiagram-v2
 - Facade는 게시물 등록·상세·회원별 목록, 댓글 등록·목록에 작성자 모델을 조합한다. 회원 조회 실패를 탈퇴 상태로 대체하지 않는다.
 - 게시물 서비스가 반환하는 원본 응답의 author는 null이며, 외부 표시 정보 조합은 Facade 책임이다.
 - 댓글 목록에서는 같은 작성자를 한 요청 안에서 중복 조회하지 않는다. 요청 간 작성자 캐시는 없다.
-- 회원 프로필의 게시물 수는 Facade에서 조합한다. 프로필 이미지는 현재 null이다. user-service 원본의 팔로워·팔로잉 수 0 및 isFollowing=false는 Facade에서 실제 정상 회원 관계 수와 요청자 기준 팔로우 여부로 교체한다.
+- 회원 프로필의 게시물 수는 Facade에서 조합한다. 프로필 이미지는 현재 null이다. member-service 원본의 팔로워·팔로잉 수 0 및 isFollowing=false는 Facade에서 실제 정상 회원 관계 수와 요청자 기준 팔로우 여부로 교체한다.
 
 ## 7. 인증과 일관성 경계
 
-- Gateway는 가입·로그인과 화면 GET을 제외한 요청에 인증을 요구한다. JWT의 subject를 회원 키로 사용하고 내부 `X-User-Key`로 전달한다.
+- Gateway는 가입·로그인과 화면 GET을 제외한 요청에 인증을 요구한다. JWT의 subject를 회원 키로 사용하고 내부 `X-Member-Key`로 전달한다.
 - 게시물·댓글 쓰기 전 정상 회원 확인은 Facade, 각 기록의 작성자 소유권 검사는 각각 post-service와 comment-service가 수행한다. 내부 서비스를 직접 호출하면 Facade의 회원 상태 확인을 거치지 않는다.
 - 로그인은 access token만 발급한다. refreshToken 응답은 null이며, refresh-token 발급·갱신·폐기 흐름은 미구현이다.
 - 탈퇴 시 이미 발급된 JWT를 즉시 폐기하지 않는다. 탈퇴 이후 읽기 요청이 토큰 인증만으로 허용될 수 있으며, 모든 인증 요청에서 회원 상태를 재검사하는 정책은 없다.
@@ -173,9 +177,9 @@ stateDiagram-v2
 - postdb의 comment_cleanup_tasks(postId PK, nextAttemptAt UTC, attempts)에 댓글 정리 작업을 저장한다. 5초 간격으로 실행 가능한 작업을 최대 20개 읽고 건별 트랜잭션으로 처리한다. 댓글 호출 실패 시 작업을 남기고 30초 후 다시 시도한다. 성공하면 작업 행을 삭제한다. HTTP 연결 제한은 2초, 응답 읽기 제한은 3초다.
 - 작업 처리 중에는 작업 행을 잠근다. 댓글 정리는 성공했으나 작업 삭제가 롤백되거나 응답이 유실되면 다시 전달될 수 있으며, 댓글 서비스의 반복 가능한 닫힘 처리가 이를 수용한다. 내부 post-service 삭제도 동일한 작업을 남긴다. 정상 회원인 원 작성자의 반복 삭제는 204이며, 타인은 403이다.
 - 게시물 삭제 이후 시작된 댓글 요청은 게시물 조회에서 404를 받는다. 삭제 전에 게시물 검사를 통과한 댓글 요청은 정리 이전에 성공할 수 있지만 정리 시 제거되며, 닫힘 처리 후의 생성은 거부된다. 이미 진행 중인 조회까지 취소하지는 않는다.
-- comment-service만 재시작해 메모리 DB의 차단 상태가 사라지면 늦은 요청 차단을 유지하지 못할 수 있다. 독립 DB 영속화와 삭제 이력 보존 정책은 별도 후속 작업이다.
+- comment-service의 닫힌 스레드는 H2 파일 DB에 보존한다. 같은 DB 경로로 재시작하면 늦게 도착한 댓글 생성 요청도 계속 차단한다. 삭제 이력 만료 정책은 별도 후속 작업이다.
 - 콘텐츠 시각은 `LocalDateTime.now()`로 저장하며 타임존·UTC 저장 계약은 아직 명시하지 않았다. 댓글 정리의 재시도 시각은 `Instant`를 사용한다.
-- 현재 H2 메모리 DB/create-drop 설정에서는 서비스 재시작 시 데이터가 소실된다. 레코드 보존 규칙이 재시작 후 영속성을 보장한다는 뜻은 아니다.
+- 각 서비스는 H2 파일 DB와 Flyway 마이그레이션을 사용하며 Hibernate는 스키마를 검증한다. 같은 저장 경로로 정상 종료·재시작할 때 레코드를 보존한다. 경로 설정, 기존 데이터 이관 제한과 검증 범위는 [로컬 DB 영속화](database-persistence.md)를 따른다.
 
 ## 8. 대표 시나리오와 검증 기준
 
@@ -206,9 +210,9 @@ stateDiagram-v2
 
 ## 10. 구현 근거
 
-- [Member](../services/user-service/src/main/java/com/petfeed/user/domain/Member.java), [DefaultUserService](../services/user-service/src/main/java/com/petfeed/user/service/DefaultUserService.java)
+- [Member](../services/member-service/src/main/java/com/petfeed/user/domain/Member.java), [DefaultMemberService](../services/member-service/src/main/java/com/petfeed/user/service/DefaultMemberService.java)
 - [Post](../services/post-service/src/main/java/com/petfeed/post/domain/Post.java), [PostService](../services/post-service/src/main/java/com/petfeed/post/service/PostService.java)
 - [Comment](../services/comment-service/src/main/java/com/petfeed/comment/domain/Comment.java), [CommentService](../services/comment-service/src/main/java/com/petfeed/comment/service/CommentService.java)
 - [FollowRelation](../services/follow-service/src/main/java/com/petfeed/follow/domain/FollowRelation.java), [FollowService](../services/follow-service/src/main/java/com/petfeed/follow/service/FollowService.java), [FollowFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/FollowFacade.java)
-- [PostFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/PostFacade.java), [CommentFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/CommentFacade.java), [UserFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/UserFacade.java)
-- [요청 DTO](../shared/common-domain/src/main/java/com/petfeed/domain/dto/request), [응답 DTO](../shared/common-domain/src/main/java/com/petfeed/domain/dto/response)
+- [PostFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/PostFacade.java), [CommentFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/CommentFacade.java), [MemberFacade](../apps/facade/src/main/java/com/petfeed/facade/controller/MemberFacade.java)
+- [요청 DTO](../shared/api-contracts/src/main/java/com/petfeed/domain/dto/request), [응답 DTO](../shared/api-contracts/src/main/java/com/petfeed/domain/dto/response)

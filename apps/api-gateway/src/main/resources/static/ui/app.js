@@ -7,18 +7,23 @@ function readStorage(storage, key, fallback) { try { return JSON.parse(storage.g
 function persist(storage, key, value) { try { storage.setItem(key, JSON.stringify(value)); } catch { /* Private browsing can disable storage. */ } }
 const seed = () => ({
   posts: [
-    {postId: 3, userKey: 'demo-me', author: {displayName: '모카와 나'}, content: '산책이라는 말에 귀가 쫑긋. 🐾\n오늘도 모카 덕분에 조금 더 걸었어요. 가을은 천천히 같이 걷기 좋은 계절이네요.', art: 'park', emoji: '🐕', createdAt: new Date(Date.now() - 1800000).toISOString()},
-    {postId: 2, userKey: 'demo-bori', author: {displayName: '보리의 오후'}, content: '햇살이 제일 잘 드는 자리는 언제나 보리 차지.\n아무것도 안 해도 좋은 오후예요. ☁', art: 'nap', emoji: '🐈', createdAt: new Date(Date.now() - 7200000).toISOString()},
-    {postId: 1, userKey: 'demo-me', author: {displayName: '모카와 나'}, content: '우리의 첫 번째 기록.\n별일 없는 하루도 함께라서 특별하니까요. 🌿', createdAt: new Date(Date.now() - 86400000).toISOString()}
+    {postId: 3, memberKey: 'demo-me', author: {displayName: '모카와 나'}, content: '산책이라는 말에 귀가 쫑긋. 🐾\n오늘도 모카 덕분에 조금 더 걸었어요. 가을은 천천히 같이 걷기 좋은 계절이네요.', art: 'park', emoji: '🐕', createdAt: new Date(Date.now() - 1800000).toISOString()},
+    {postId: 2, memberKey: 'demo-bori', author: {displayName: '보리의 오후'}, content: '햇살이 제일 잘 드는 자리는 언제나 보리 차지.\n아무것도 안 해도 좋은 오후예요. ☁', art: 'nap', emoji: '🐈', createdAt: new Date(Date.now() - 7200000).toISOString()},
+    {postId: 1, memberKey: 'demo-me', author: {displayName: '모카와 나'}, content: '우리의 첫 번째 기록.\n별일 없는 하루도 함께라서 특별하니까요. 🌿', createdAt: new Date(Date.now() - 86400000).toISOString()}
   ],
   comments: [
-    {commentId: 2, postId: 3, userKey: 'demo-bori', author: {displayName: '보리의 오후'}, content: '귀가 너무 귀여워요! 오늘도 즐거운 산책 🐾', createdAt: new Date().toISOString()},
-    {commentId: 1, postId: 3, userKey: 'demo-me', author: {displayName: '모카와 나'}, content: '이 길이 모카의 최애 산책 코스예요.', createdAt: new Date().toISOString()}
+    {commentId: 2, postId: 3, memberKey: 'demo-bori', author: {displayName: '보리의 오후'}, content: '귀가 너무 귀여워요! 오늘도 즐거운 산책 🐾', createdAt: new Date().toISOString()},
+    {commentId: 1, postId: 3, memberKey: 'demo-me', author: {displayName: '모카와 나'}, content: '이 길이 모카의 최애 산책 코스예요.', createdAt: new Date().toISOString()}
   ]
 });
 let demoData = readStorage(localStorage, 'petfeed-demo-v1', null);
 if (!demoData || !Array.isArray(demoData.posts) || !Array.isArray(demoData.comments)) demoData = seed();
-const state = { mode: 'demo', token: readStorage(sessionStorage, 'petfeed-token', ''), userKey: '', target: '', posts: [], cursor: 0, busy: false, generation: 0, commentPages: new Map(), editor: null, signup: false, deletion: null };
+// Preserve ownership of records saved before the member API rename.
+for (const record of [...demoData.posts, ...demoData.comments]) {
+  if (record.memberKey == null && typeof record.userKey === 'string') record.memberKey = record.userKey;
+}
+persist(localStorage, 'petfeed-demo-v1', demoData);
+const state = { mode: 'demo', token: readStorage(sessionStorage, 'petfeed-token', ''), memberKey: '', target: '', posts: [], cursor: 0, busy: false, generation: 0, commentPages: new Map(), editor: null, signup: false, deletion: null };
 const feedMediaUrls = new Set();
 let editorBusy = false;
 
@@ -118,10 +123,10 @@ $('#editor-dialog').addEventListener('close', () => {
 function tokenKey(token) {
   try { const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(part)).sub || ''; } catch { return ''; }
 }
-state.userKey = tokenKey(state.token);
-const me = () => state.mode === 'demo' ? 'demo-me' : state.userKey;
+state.memberKey = tokenKey(state.token);
+const me = () => state.mode === 'demo' ? 'demo-me' : state.memberKey;
 const saveDemo = () => persist(localStorage, 'petfeed-demo-v1', demoData);
-const nameOf = item => item.author?.displayName || item.userKey || '이름 없는 친구';
+const nameOf = item => item.author?.displayName || item.memberKey || '이름 없는 친구';
 function timeOf(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
@@ -148,7 +153,7 @@ function syncChrome() {
   $('#mode-button').textContent = state.mode === 'demo' ? '실제 API로 전환 ↗' : '데모 모드로 돌아가기 ↗';
   $('#account-button').textContent = state.mode === 'api' && state.token ? '로그아웃' : '로그인';
   $('#demo-note').textContent = state.mode === 'demo' ? '데모 기록은 이 브라우저에 저장돼요.' : '현재 Gateway의 실제 API를 사용해요.';
-  $('#user-key').value = state.target;
+  $('#member-key').value = state.target;
   $('#feed-title').textContent = state.target === me() ? '나의 기록 ☀' : '우리들의 기록 ☀';
   $('#home-button').classList.toggle('active', state.target !== me());
   $('#mine-button').classList.toggle('active', state.target === me());
@@ -158,7 +163,7 @@ function renderPosts() {
   for (const url of feedMediaUrls) URL.revokeObjectURL(url);
   feedMediaUrls.clear();
   $('#feed').innerHTML = state.posts.map(post => {
-    const mine = post.userKey === me();
+    const mine = post.memberKey === me();
     const image = safeImage(post.thumbnailUrl);
     const count = state.mode === 'demo' ? demoData.comments.filter(c => c.postId === post.postId).length : post.commentCount ?? 0;
     return `<article class="post-card" data-post="${esc(post.postId)}">
@@ -181,7 +186,7 @@ async function loadPosts(append = false) {
   try {
     let posts, next;
     if (state.mode === 'demo') {
-      posts = demoData.posts.filter(post => !state.target || post.userKey === state.target).sort((a,b) => b.postId - a.postId);
+      posts = demoData.posts.filter(post => !state.target || post.memberKey === state.target).sort((a,b) => b.postId - a.postId);
       next = null;
     } else {
       if (!state.token || !state.target) {
@@ -189,7 +194,7 @@ async function loadPosts(append = false) {
         notice(state.token ? '조회할 회원 키를 입력해 주세요.' : '실제 데이터를 보려면 로그인해 주세요.');
         return;
       }
-      const page = await api(`/users/${encodeURIComponent(state.target)}/posts?cursor=${cursor}`);
+      const page = await api(`/members/${encodeURIComponent(state.target)}/posts?cursor=${cursor}`);
       posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
       next = page.hasNext ? page.nextCursor : null;
     }
@@ -200,7 +205,7 @@ async function loadPosts(append = false) {
   finally { if (generation === state.generation) { $('#feed').setAttribute('aria-busy', 'false'); $('#more-posts').disabled = false; } }
 }
 function commentMarkup(comment) {
-  return `<div class="comment" data-comment="${esc(comment.commentId)}"><div class="avatar">${esc(nameOf(comment).slice(0,1))}</div><div class="comment-main"><div class="comment-meta"><strong>${esc(nameOf(comment))}</strong><time>${esc(timeOf(comment.createdAt))}</time>${comment.userKey === me() ? '<button class="icon-button" data-action="edit-comment">수정</button><button class="icon-button" data-action="delete-comment">삭제</button>' : ''}</div><p>${esc(comment.content)}</p></div></div>`;
+  return `<div class="comment" data-comment="${esc(comment.commentId)}"><div class="avatar">${esc(nameOf(comment).slice(0,1))}</div><div class="comment-main"><div class="comment-meta"><strong>${esc(nameOf(comment))}</strong><time>${esc(timeOf(comment.createdAt))}</time>${comment.memberKey === me() ? '<button class="icon-button" data-action="edit-comment">수정</button><button class="icon-button" data-action="delete-comment">삭제</button>' : ''}</div><p>${esc(comment.content)}</p></div></div>`;
 }
 async function loadComments(card, append = false) {
   const postId = Number(card.dataset.post);
@@ -265,7 +270,7 @@ $('#editor-form').addEventListener('submit', async event => {
     if (state.mode === 'demo') {
       if (kind === 'comment') Object.assign(demoData.comments.find(c => c.commentId === commentId), {content, updatedAt: new Date().toISOString()});
       else if (postId) Object.assign(demoData.posts.find(p => p.postId === postId), {content, thumbnailUrl, updatedAt: new Date().toISOString()});
-      else demoData.posts.unshift({postId: Date.now(), userKey: me(), author: {displayName: '모카와 나'}, content, thumbnailUrl, createdAt: new Date().toISOString()});
+      else demoData.posts.unshift({postId: Date.now(), memberKey: me(), author: {displayName: '모카와 나'}, content, thumbnailUrl, createdAt: new Date().toISOString()});
       saveDemo();
     } else {
       const path = kind === 'comment' ? `/posts/${postId}/comments/${commentId}` : postId ? `/posts/${postId}` : '/posts';
@@ -295,7 +300,7 @@ $('#feed').addEventListener('submit', async event => {
   $('button', form).disabled = true;
   try {
     if (state.mode === 'demo') {
-      demoData.comments.push({commentId: Date.now(), postId, userKey: me(), author: {displayName:'모카와 나'}, content, createdAt: new Date().toISOString()}); saveDemo();
+      demoData.comments.push({commentId: Date.now(), postId, memberKey: me(), author: {displayName:'모카와 나'}, content, createdAt: new Date().toISOString()}); saveDemo();
     } else await api(`/posts/${postId}/comments`, 'POST', {content});
     const post = state.posts.find(p => p.postId === postId);
     post.commentCount = (post.commentCount || 0) + 1;
@@ -364,13 +369,13 @@ $('#auth-form').addEventListener('submit', async event => {
   try {
     const body = {email: $('#email').value, password: $('#password').value};
     if (state.signup) {
-      await api('/users/signup', 'POST', {...body, nickname: $('#nickname').value, phone: $('#phone').value});
+      await api('/members/signup', 'POST', {...body, nickname: $('#nickname').value, phone: $('#phone').value});
       state.signup = false; syncAuth(); $('#auth-error').textContent = '가입했어요. 같은 계정으로 로그인해 주세요.';
     } else {
       const response = await api('/auth/login', 'POST', body);
       const key = tokenKey(response.accessToken);
       if (!key) throw new Error('로그인 응답의 사용자 정보를 확인할 수 없어요.');
-      state.token = response.accessToken; state.userKey = key; state.target = key; state.mode = 'api';
+      state.token = response.accessToken; state.memberKey = key; state.target = key; state.mode = 'api';
       persist(sessionStorage, 'petfeed-token', state.token);
       $('#password').value = ''; $('#auth-dialog').close(); await loadPosts();
     }
@@ -378,16 +383,16 @@ $('#auth-form').addEventListener('submit', async event => {
   finally { $('#auth-submit').disabled = false; }
 });
 $('#account-button').addEventListener('click', async () => {
-  if (state.mode === 'api' && state.token) { state.token = ''; state.userKey = ''; state.target = ''; persist(sessionStorage, 'petfeed-token', ''); await loadPosts(); }
+  if (state.mode === 'api' && state.token) { state.token = ''; state.memberKey = ''; state.target = ''; persist(sessionStorage, 'petfeed-token', ''); await loadPosts(); }
   else openAuth();
 });
-$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = state.mode === 'demo' ? '' : state.userKey; await loadPosts(); });
+$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = state.mode === 'demo' ? '' : state.memberKey; await loadPosts(); });
 $('#compose-button').addEventListener('click', () => openEditor('post'));
 $('#write-button').addEventListener('click', () => openEditor('post'));
 $('#refresh-button').addEventListener('click', () => loadPosts());
 $('#more-posts').addEventListener('click', () => loadPosts(true));
 $('#home-button').addEventListener('click', async () => { state.target = state.mode === 'demo' ? '' : me(); await loadPosts(); });
 $('#mine-button').addEventListener('click', async () => { if (!canWrite()) return; state.target = me(); await loadPosts(); });
-$('#search-form').addEventListener('submit', async event => { event.preventDefault(); state.target = $('#user-key').value.trim(); await loadPosts(); });
+$('#search-form').addEventListener('submit', async event => { event.preventDefault(); state.target = $('#member-key').value.trim(); await loadPosts(); });
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
 loadPosts().catch(error => notice(error.message, true));

@@ -1,5 +1,5 @@
 ### 회원가입
-POST {{baseUrl}}/api/v1/users/signup
+POST {{baseUrl}}/api/v1/members/signup
 Content-Type: application/json
 
 {
@@ -13,8 +13,8 @@ Content-Type: application/json
   client.test("회원가입 성공", function () {
     client.assert(response.status === 201 || response.status === 200, "Expected 2xx");
   });
-  if (response.body.userKey) {
-    client.global.set("userKey", response.body.userKey);
+  if (response.body.memberKey) {
+    client.global.set("memberKey", response.body.memberKey);
   }
 %}
 

@@ -1,13 +1,13 @@
 package com.petfeed.facade.controller;
 
-import com.petfeed.domain.dto.request.SaveCommentRequest;
-import com.petfeed.domain.dto.response.*;
+import com.petfeed.contracts.dto.request.SaveCommentRequest;
+import com.petfeed.contracts.dto.response.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,7 +17,7 @@ public class CommentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentResponse create(@PathVariable("postId") Long postId, @RequestHeader(X_USER_KEY) String key,
+    public CommentResponse create(@PathVariable("postId") Long postId, @RequestHeader(X_MEMBER_KEY) String key,
             @Valid @RequestBody SaveCommentRequest request) { return comments.create(postId, key, request); }
 
     @GetMapping
@@ -27,12 +27,12 @@ public class CommentController {
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void update(@PathVariable("postId") Long postId, @PathVariable("id") Long id,
-            @RequestHeader(X_USER_KEY) String key, @Valid @RequestBody SaveCommentRequest request) {
+            @RequestHeader(X_MEMBER_KEY) String key, @Valid @RequestBody SaveCommentRequest request) {
         comments.update(postId, id, key, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("postId") Long postId, @PathVariable("id") Long id,
-            @RequestHeader(X_USER_KEY) String key) { comments.delete(postId, id, key); }
+            @RequestHeader(X_MEMBER_KEY) String key) { comments.delete(postId, id, key); }
 }
