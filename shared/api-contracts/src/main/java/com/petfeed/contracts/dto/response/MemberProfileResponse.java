@@ -14,6 +14,7 @@ public class MemberProfileResponse {
     private String bio;
     private int followerCount;
     private int followingCount;
+    @com.fasterxml.jackson.annotation.JsonProperty("following")
     private boolean isFollowing;
     private long postCount;
 }

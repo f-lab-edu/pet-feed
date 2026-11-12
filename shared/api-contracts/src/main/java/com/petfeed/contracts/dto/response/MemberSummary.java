@@ -12,5 +12,6 @@ public class MemberSummary {
     private String memberKey;
     private String nickname;
     private String profileImageUrl;
+    @com.fasterxml.jackson.annotation.JsonProperty("following")
     private boolean isFollowing;
 }
