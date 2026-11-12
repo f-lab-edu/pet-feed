@@ -1,12 +1,12 @@
-// Local-only integration smoke test. Usage: node scripts/media-smoke.mjs <sample.mp4>
-import {readFile} from 'node:fs/promises';
+// Local-only integration smoke test. Pipe MP4 bytes to stdin: node scripts/media-smoke.mjs < sample.mp4 (cmd/bash).
+import {readFileSync} from 'node:fs';
 import {deflateSync} from 'node:zlib';
 import assert from 'node:assert/strict';
 
 const base = 'http://localhost:8080/api/v1';
-const videoPath = process.argv[2];
-if (!videoPath) throw new Error('Provide a local MP4 fixture path. All seven services must be running.');
-const video = await readFile(videoPath);
+if (process.stdin.isTTY) throw new Error('Pipe an MP4 fixture to stdin. All seven services must be running.');
+const video = readFileSync(0);
+assert.ok(video.length > 0 && video.length <= 50 * 1024 * 1024, 'Provide an MP4 fixture of at most 50 MiB');
 
 function png() {
   function chunk(type, data) {
@@ -28,7 +28,9 @@ function png() {
 
 let token = '';
 async function request(path, {method = 'GET', body, type, headers = {}, expected = 200} = {}) {
-  const response = await fetch(base + path, {method,
+  // Only the local smoke-test routes may receive requests, including server-returned IDs.
+  assert.match(path, new RegExp("^/(?:members/signup|auth/login|media|posts(?:/[1-9]\\d*(?:/media/[0-9a-f-]{36})?)?)$"));
+  const response = await fetch(base + path, {method, redirect: 'error',
     headers: {...(token ? {Authorization: `Bearer ${token}`} : {}),
       ...(body === undefined ? {} : {'Content-Type': type || 'application/json'}), ...headers},
     body: body === undefined ? undefined : type ? body : JSON.stringify(body)});
