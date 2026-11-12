@@ -1,7 +1,7 @@
 package com.petfeed.comment;
 
 import com.petfeed.comment.service.CommentService;
-import com.petfeed.domain.dto.request.SaveCommentRequest;
+import com.petfeed.contracts.dto.request.SaveCommentRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.builder.SpringApplicationBuilder;

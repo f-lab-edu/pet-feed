@@ -11,9 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
-    long countByUserKeyAndDeletedFalse(String userKey);
-    List<Post> findByUserKeyAndDeletedFalseOrderByIdDesc(String userKey, Pageable pageable);
-    List<Post> findByUserKeyAndDeletedFalseAndIdLessThanOrderByIdDesc(String userKey, Long cursor, Pageable pageable);
+    long countByMemberKeyAndDeletedFalse(String memberKey);
+    List<Post> findByMemberKeyAndDeletedFalseOrderByIdDesc(String memberKey, Pageable pageable);
+    List<Post> findByMemberKeyAndDeletedFalseAndIdLessThanOrderByIdDesc(String memberKey, Long cursor, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Post p where p.id = :id")

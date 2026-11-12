@@ -30,7 +30,7 @@ class PostIntegrationTest {
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/posts/{id}", id)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("updated"));
-        assertThat(posts.findById(id).orElseThrow().getUserKey()).isEqualTo("owner");
+        assertThat(posts.findById(id).orElseThrow().getMemberKey()).isEqualTo("owner");
         mvc.perform(delete("/api/v1/posts/{id}", id).header("X-User-Key", "owner"))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/posts/{id}", id)).andExpect(status().isNotFound());
@@ -54,7 +54,7 @@ class PostIntegrationTest {
     @Test void cursorPagesAreDescendingAndIsolatedByAuthor() throws Exception {
         for (int i = 0; i < 21; i++) posts.save(Post.create("owner", "post " + i, null));
         posts.save(Post.create("other", "other", null));
-        var ids = posts.findAll().stream().filter(p -> p.getUserKey().equals("owner"))
+        var ids = posts.findAll().stream().filter(p -> p.getMemberKey().equals("owner"))
                 .map(Post::getId).sorted(java.util.Comparator.reverseOrder()).toList();
         mvc.perform(get("/api/v1/users/owner/posts")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.posts.length()").value(20))

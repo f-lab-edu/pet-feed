@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 @Entity
-@Table(name = "posts", indexes = @Index(name = "idx_post_author_id", columnList = "userKey,id"))
+@Table(name = "posts", indexes = @Index(name = "idx_post_author_id", columnList = "user_key,id"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post {
@@ -36,8 +36,8 @@ public class Post {
     public void markDeleted() { deleted = true; }
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, updatable = false)
-    private String userKey;
+    @Column(name = "user_key", nullable = false, updatable = false)
+    private String memberKey;
     @Column(nullable = false, length = 5000)
     private String content;
     @Column(length = 2048)
@@ -47,18 +47,18 @@ public class Post {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static Post create(String userKey, String content, String thumbnailUrl) {
-        if (userKey == null || userKey.isBlank())
+    public static Post create(String memberKey, String content, String thumbnailUrl) {
+        if (memberKey == null || memberKey.isBlank())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author is required");
         Post post = new Post();
-        post.userKey = userKey;
+        post.memberKey = memberKey;
         post.createdAt = LocalDateTime.now();
         post.replace(content, thumbnailUrl);
         return post;
     }
 
     public void requireOwner(String requesterKey) {
-        if (!userKey.equals(requesterKey))
+        if (!memberKey.equals(requesterKey))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the author can change this post");
     }
 

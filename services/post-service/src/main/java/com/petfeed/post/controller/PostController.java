@@ -1,13 +1,13 @@
 package com.petfeed.post.controller;
 
-import com.petfeed.domain.dto.request.SavePostRequest;
-import com.petfeed.domain.dto.response.*;
+import com.petfeed.contracts.dto.request.SavePostRequest;
+import com.petfeed.contracts.dto.response.*;
 import com.petfeed.post.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,7 +16,7 @@ public class PostController {
 
     @PostMapping("/api/v1/posts")
     @ResponseStatus(HttpStatus.CREATED)
-    public PostDetailResponse create(@RequestHeader(X_USER_KEY) String key, @Valid @RequestBody SavePostRequest request) {
+    public PostDetailResponse create(@RequestHeader(X_MEMBER_KEY) String key, @Valid @RequestBody SavePostRequest request) {
         return posts.create(key, request);
     }
 
@@ -25,12 +25,12 @@ public class PostController {
 
     @PutMapping("/api/v1/posts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable("id") Long id, @RequestHeader(X_USER_KEY) String key,
+    public void update(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key,
                        @Valid @RequestBody SavePostRequest request) { posts.update(id, key, request); }
 
     @DeleteMapping("/api/v1/posts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable("id") Long id, @RequestHeader(X_USER_KEY) String key) { posts.delete(id, key); }
+    public void delete(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key) { posts.delete(id, key); }
 
     @GetMapping("/api/v1/posts/count/{user-key}")
     public long count(@PathVariable("user-key") String key) { return posts.count(key); }

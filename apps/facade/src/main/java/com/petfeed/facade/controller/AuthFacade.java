@@ -1,7 +1,7 @@
 package com.petfeed.facade.controller;
 
-import com.petfeed.domain.dto.request.LoginRequest;
-import com.petfeed.domain.dto.response.LoginResponse;
+import com.petfeed.contracts.dto.request.LoginRequest;
+import com.petfeed.contracts.dto.response.LoginResponse;
 import com.petfeed.facade.client.AuthFeignClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

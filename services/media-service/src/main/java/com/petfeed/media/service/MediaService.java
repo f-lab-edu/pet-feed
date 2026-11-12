@@ -2,7 +2,7 @@ package com.petfeed.media.service;
 
 import com.petfeed.media.domain.MediaFile;
 import com.petfeed.media.repository.MediaRepository;
-import com.petfeed.domain.dto.response.MediaResponse;
+import com.petfeed.contracts.dto.response.MediaResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;

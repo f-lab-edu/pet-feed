@@ -1,9 +1,9 @@
 package com.petfeed.facade.controller;
 
-import com.petfeed.domain.dto.request.SavePostRequest;
-import com.petfeed.domain.dto.response.*;
+import com.petfeed.contracts.dto.request.SavePostRequest;
+import com.petfeed.contracts.dto.response.*;
 import com.petfeed.facade.client.PostFeignClient;
-import com.petfeed.facade.client.UserFeignClient;
+import com.petfeed.facade.client.MemberFeignClient;
 import com.petfeed.facade.client.MediaFeignClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class PostFacade {
     private final PostFeignClient posts;
-    private final UserFeignClient users;
+    private final MemberFeignClient members;
     private final MediaFeignClient media;
 
     public PostDetailResponse create(String key, SavePostRequest request) {
@@ -25,7 +25,7 @@ public class PostFacade {
 
     public PostDetailResponse get(Long id) {
         var post = posts.get(id);
-        return post.withAuthor(users.getAuthor(post.getUserKey()));
+        return post.withAuthor(members.getAuthor(post.getMemberKey()));
     }
 
     public void update(Long id, String key, SavePostRequest request) {
@@ -40,7 +40,7 @@ public class PostFacade {
     }
 
     private AuthorResponse requireActive(String key) {
-        var author = users.getAuthor(key);
+        var author = members.getAuthor(key);
         if (author.getStatus() != MemberStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Withdrawn members cannot change posts");
         return author;

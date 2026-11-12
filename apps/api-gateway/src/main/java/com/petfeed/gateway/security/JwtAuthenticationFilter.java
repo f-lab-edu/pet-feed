@@ -21,7 +21,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @Component
 @RequiredArgsConstructor
@@ -36,12 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            String userKey = jwtTokenProvider.getUserKey(token);
+            String memberKey = jwtTokenProvider.getMemberKey(token);
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userKey, null, Collections.emptyList());
+                    new UsernamePasswordAuthenticationToken(memberKey, null, Collections.emptyList());
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            filterChain.doFilter(new UserKeyInjectingRequestWrapper(request, userKey), response);
+            filterChain.doFilter(new MemberKeyInjectingRequestWrapper(request, memberKey), response);
             return;
         }
 
@@ -56,14 +56,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private static class UserKeyInjectingRequestWrapper extends HttpServletRequestWrapper {
+    private static class MemberKeyInjectingRequestWrapper extends HttpServletRequestWrapper {
 
         private final Map<String, String> extraHeaders;
 
-        public UserKeyInjectingRequestWrapper(HttpServletRequest request, String userKey) {
+        public MemberKeyInjectingRequestWrapper(HttpServletRequest request, String memberKey) {
             super(request);
             this.extraHeaders = new HashMap<>();
-            this.extraHeaders.put(X_USER_KEY, userKey);
+            this.extraHeaders.put(X_MEMBER_KEY, memberKey);
         }
 
         @Override

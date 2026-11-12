@@ -1,6 +1,6 @@
 package com.petfeed.follow.controller;
 
-import com.petfeed.domain.dto.response.FollowPage;
+import com.petfeed.contracts.dto.response.FollowPage;
 import com.petfeed.follow.service.FollowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 
-import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,12 +16,12 @@ public class FollowController {
     private final FollowService follows;
 
     @PostMapping("/api/v1/following/{key}")
-    public void follow(@PathVariable("key") String key, @RequestHeader(X_USER_KEY) String requester) {
+    public void follow(@PathVariable("key") String key, @RequestHeader(X_MEMBER_KEY) String requester) {
         follows.follow(requester, key);
     }
 
     @DeleteMapping("/api/v1/following/{key}")
-    public void unfollow(@PathVariable("key") String key, @RequestHeader(X_USER_KEY) String requester) {
+    public void unfollow(@PathVariable("key") String key, @RequestHeader(X_MEMBER_KEY) String requester) {
         follows.unfollow(requester, key);
     }
 

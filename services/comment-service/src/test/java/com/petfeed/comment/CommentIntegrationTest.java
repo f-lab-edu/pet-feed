@@ -3,7 +3,7 @@ package com.petfeed.comment;
 import com.petfeed.comment.domain.Comment;
 import com.petfeed.comment.repository.*;
 import com.petfeed.comment.service.CommentService;
-import com.petfeed.domain.dto.request.SaveCommentRequest;
+import com.petfeed.contracts.dto.request.SaveCommentRequest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

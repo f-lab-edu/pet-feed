@@ -1,6 +1,6 @@
 package com.petfeed.gateway.controller;
 
-import com.petfeed.domain.exception.DownstreamException;
+import com.petfeed.gateway.exception.DownstreamException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

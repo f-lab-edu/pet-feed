@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     // Shared 모듈
-    implementation project(':common-domain')
+    implementation project(':api-contracts')
     implementation project(':common-infrastructure')
 
     // Database

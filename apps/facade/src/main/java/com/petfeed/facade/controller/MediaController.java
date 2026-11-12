@@ -1,7 +1,7 @@
 package com.petfeed.facade.controller;
 
 import com.petfeed.facade.client.*;
-import com.petfeed.domain.dto.response.MemberStatus;
+import com.petfeed.contracts.dto.response.MemberStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -10,30 +10,30 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
-import static com.petfeed.domain.http.MyHttpHeaders.X_USER_KEY;
+import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 public class MediaController {
-    private final UserFeignClient users;
+    private final MemberFeignClient members;
     private final PostFeignClient posts;
     private final RestClient client;
     private static final int MAX_BYTES = 50 * 1024 * 1024;
 
-    public MediaController(UserFeignClient users, PostFeignClient posts, RestClient.Builder builder,
+    public MediaController(MemberFeignClient members, PostFeignClient posts, RestClient.Builder builder,
             @Value("${services.media-service.url:http://localhost:8086}") String url) {
-        this.users = users;
+        this.members = members;
         this.posts = posts;
         this.client = builder.baseUrl(url).build();
     }
 
     @PostMapping("/api/v1/media")
-    public ResponseEntity<byte[]> upload(@RequestHeader(X_USER_KEY) String owner, HttpServletRequest request) throws IOException {
-        if (users.getAuthor(owner).getStatus() != MemberStatus.ACTIVE)
+    public ResponseEntity<byte[]> upload(@RequestHeader(X_MEMBER_KEY) String owner, HttpServletRequest request) throws IOException {
+        if (members.getAuthor(owner).getStatus() != MemberStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         byte[] body = request.getInputStream().readNBytes(MAX_BYTES + 1);
         if (body.length > MAX_BYTES) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
         try {
-            return client.post().uri("/internal/v1/media").header(X_USER_KEY, owner)
+            return client.post().uri("/internal/v1/media").header(X_MEMBER_KEY, owner)
                     .contentType(MediaType.parseMediaType(request.getContentType() == null ? "application/octet-stream" : request.getContentType()))
                     .body(body).retrieve().toEntity(byte[].class);
         } catch (RestClientResponseException failure) {
