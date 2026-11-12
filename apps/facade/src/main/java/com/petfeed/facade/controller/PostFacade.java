@@ -41,7 +41,7 @@ public class PostFacade {
 
     private AuthorResponse requireActive(String key) {
         var author = members.getAuthor(key);
-        if (author.getStatus() != MemberStatus.ACTIVE)
+        if (author.getStatus() != AuthorStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Withdrawn members cannot change posts");
         return author;
     }

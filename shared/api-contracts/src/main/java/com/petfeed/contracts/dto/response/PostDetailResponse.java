@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(staticName = "of")
 public class PostDetailResponse {
     private Long postId;
-    @com.fasterxml.jackson.annotation.JsonProperty("userKey")
     private String memberKey;
     private String content;
     private String thumbnailUrl;

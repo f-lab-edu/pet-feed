@@ -8,6 +8,10 @@
 
 ## 1. 용어와 범위
 
+회원 API는 `/api/v1/members`, JSON `memberKey`·`members`, 내부 인증 헤더 `X-Member-Key`로 통일했다. 이전 `/users`·`userKey`·`users`·`X-User-Key` 별칭은 제공하지 않으며 클라이언트도 함께 전환한다. 로그인 경로 `/api/v1/auth/login`은 그대로다.
+
+DTO는 `api-contracts`에서 공유한다. 회원 도메인의 `MemberStatus`와 API 작성자 상태 `AuthorStatus`는 별도 타입이고 회원 서비스가 명시적으로 변환한다. 회원 서비스는 `MemberInfoResponse`로 기본 정보만 반환하며, Facade가 게시글 수와 팔로우 통계를 조합해 `MemberProfileResponse`를 만든다. 기존 DB 컬럼 `user_key`는 데이터 보존을 위해 매핑으로 유지한다.
+
 | 용어 | 의미 | 현재 구현 |
 | --- | --- | --- |
 | 회원(Member) | 가입·로그인하고 기록을 작성하는 사용자 | member-service의 영속 엔티티 |
@@ -23,8 +27,8 @@
 
 ```mermaid
 erDiagram
-    MEMBER ||--o{ POST : "작성 (userKey 논리 참조)"
-    MEMBER ||--o{ COMMENT : "작성 (userKey 논리 참조)"
+    MEMBER ||--o{ POST : "작성 (memberKey 논리 참조)"
+    MEMBER ||--o{ COMMENT : "작성 (memberKey 논리 참조)"
     POST ||--o{ COMMENT : "포함 (postId 논리 참조)"
     MEMBER ||--o{ FOLLOW_RELATION : "followerKey 논리 참조"
     MEMBER ||--o{ FOLLOW_RELATION : "followingKey 논리 참조"
@@ -32,7 +36,7 @@ erDiagram
 
 - 회원 한 명은 여러 게시물과 댓글을 작성할 수 있다. 게시물과 댓글에는 각각 한 작성자 키가 저장된다.
 - 댓글은 정확히 하나의 게시물에 속한다. 댓글의 게시물과 작성자는 생성 후 변경하지 않는다.
-- 회원·게시물·댓글 DB는 서비스별로 분리된다. `Post.userKey`, `Comment.userKey`에는 회원 DB 외래 키가 없으며, 회원 엔티티를 JPA 연관관계로 공유하지 않는다.
+- 회원·게시물·댓글 DB는 서비스별로 분리된다. `Post.memberKey`, `Comment.memberKey`에는 회원 DB 외래 키가 없으며, 회원 엔티티를 JPA 연관관계로 공유하지 않는다.
 - 댓글은 게시물 엔티티 대신 Long postId만 보관하며 서비스 간 외래 키가 없다. Facade가 게시물 존재를 확인하며 각 서비스는 상대 서비스 엔티티나 저장소를 참조하지 않는다.
 - 회원 탈퇴와 게시물 삭제는 다르다. 탈퇴는 회원 상태 변경이며, 게시물 삭제는 게시물을 즉시 숨기고 소속 댓글은 비동기로 물리 삭제한다. 게시물 행은 삭제 상태로 보존한다.
 
@@ -55,7 +59,7 @@ erDiagram
 
 | 필드 | 타입 | 제약·의미 |
 | --- | --- | --- |
-| userKey | String | UUID 문자열, PK. 가입 시 생성 |
+| memberKey | String | UUID 문자열, PK. 가입 시 생성 |
 | email | String | 필수, DB 유니크. 서비스에서 앞뒤 공백 제거 및 소문자로 정규화 |
 | passwordHash | String | 필수. BCrypt 해시 저장, 원문 비밀번호 저장 안 함 |
 | phone | String | 필수. 가입 요청에서 공백 불가. 별도 전화번호 형식 검증 없음 |
@@ -86,12 +90,12 @@ stateDiagram-v2
 
 ## 4. 게시물(Post)
 
-저장 테이블: `posts`. `(userKey, id)` 조회 인덱스를 둔다.
+저장 테이블: `posts`. `(memberKey, id)` 조회 인덱스를 둔다.
 
 | 필드 | 타입 | 제약·의미 |
 | --- | --- | --- |
 | id | Long | 자동 증가 PK. 외부 응답에서는 `postId` |
-| userKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
+| memberKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
 | content | String | 필수, 공백 불가, 최대 5,000자 |
 | thumbnailUrl | String | 선택, 최대 2,048자 |
 | mediaIds | List&lt;String&gt; | 최대 6개, UUID, 중복 불가. post_media에 순서와 함께 저장 |
@@ -116,7 +120,7 @@ stateDiagram-v2
 | --- | --- | --- |
 | id | Long | 자동 증가 PK. 외부 응답에서는 `commentId` |
 | postId | Long | 필수 양수, 게시물 논리 참조, 생성 후 변경 불가 |
-| userKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
+| memberKey | String | 필수, 공백 불가, 생성 후 변경 불가 |
 | content | String | 필수, 공백 불가, 최대 1,000자 |
 | createdAt | LocalDateTime | 생성 시 설정, 변경 불가 |
 | updatedAt | LocalDateTime | 생성·수정 시 설정 |
@@ -135,7 +139,7 @@ stateDiagram-v2
 
 | 항목 | 회원별 게시물 | 게시물별 댓글 |
 | --- | --- | --- |
-| 조회 범위 | 지정 userKey | 지정 postId |
+| 조회 범위 | 지정 memberKey | 지정 postId |
 | 정렬 | ID 내림차순 | ID 내림차순 |
 | 페이지 크기 | 최대 20개 | 최대 20개 |
 | 최초 cursor | 0 | 0 |
@@ -163,7 +167,7 @@ stateDiagram-v2
 
 ## 7. 인증과 일관성 경계
 
-- Gateway는 가입·로그인과 화면 GET을 제외한 요청에 인증을 요구한다. JWT의 subject를 회원 키로 사용하고 내부 `X-User-Key`로 전달한다.
+- Gateway는 가입·로그인과 화면 GET을 제외한 요청에 인증을 요구한다. JWT의 subject를 회원 키로 사용하고 내부 `X-Member-Key`로 전달한다.
 - 게시물·댓글 쓰기 전 정상 회원 확인은 Facade, 각 기록의 작성자 소유권 검사는 각각 post-service와 comment-service가 수행한다. 내부 서비스를 직접 호출하면 Facade의 회원 상태 확인을 거치지 않는다.
 - 로그인은 access token만 발급한다. refreshToken 응답은 null이며, refresh-token 발급·갱신·폐기 흐름은 미구현이다.
 - 탈퇴 시 이미 발급된 JWT를 즉시 폐기하지 않는다. 탈퇴 이후 읽기 요청이 토큰 인증만으로 허용될 수 있으며, 모든 인증 요청에서 회원 상태를 재검사하는 정책은 없다.

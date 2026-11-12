@@ -25,12 +25,12 @@ public class FollowController {
         follows.unfollow(requester, key);
     }
 
-    @GetMapping("/internal/v1/users/{key}/followers")
+    @GetMapping("/internal/v1/members/{key}/followers")
     public FollowPage followers(@PathVariable("key") String key, @RequestParam(name = "cursor", defaultValue = "0") Long cursor) {
         return follows.list(key, cursor, true);
     }
 
-    @GetMapping("/internal/v1/users/{key}/followings")
+    @GetMapping("/internal/v1/members/{key}/followings")
     public FollowPage followings(@PathVariable("key") String key, @RequestParam(name = "cursor", defaultValue = "0") Long cursor) {
         return follows.list(key, cursor, false);
     }

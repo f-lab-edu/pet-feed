@@ -20,19 +20,19 @@ class FollowIntegrationTest {
     @BeforeEach void reset() { follows.deleteAll(); }
 
     @Test void followUnfollowAndDuplicateRules() throws Exception {
-        mvc.perform(post("/api/v1/following/target").header("X-User-Key", "owner")).andExpect(status().isOk());
-        mvc.perform(post("/api/v1/following/target").header("X-User-Key", "owner")).andExpect(status().isConflict());
+        mvc.perform(post("/api/v1/following/target").header("X-Member-Key", "owner")).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/following/target").header("X-Member-Key", "owner")).andExpect(status().isConflict());
         assertThat(follows.existsByFollowerKeyAndFollowingKey("owner", "target")).isTrue();
         assertThat(follows.existsByFollowerKeyAndFollowingKey("target", "owner")).isFalse();
-        for (int i = 0; i < 2; i++) mvc.perform(delete("/api/v1/following/target").header("X-User-Key", "owner"))
+        for (int i = 0; i < 2; i++) mvc.perform(delete("/api/v1/following/target").header("X-Member-Key", "owner"))
                 .andExpect(status().isOk());
         assertThat(follows.count()).isZero();
     }
 
     @Test void selfAndUnauthenticatedWritesAreRejected() throws Exception {
-        mvc.perform(post("/api/v1/following/owner").header("X-User-Key", "owner")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/following/owner").header("X-Member-Key", "owner")).andExpect(status().isBadRequest());
         mvc.perform(post("/api/v1/following/target")).andExpect(status().isBadRequest());
-        mvc.perform(get("/internal/v1/users/owner/followers").param("cursor", "-1")).andExpect(status().isBadRequest());
+        mvc.perform(get("/internal/v1/members/owner/followers").param("cursor", "-1")).andExpect(status().isBadRequest());
         assertThat(follows.count()).isZero();
     }
 
@@ -40,12 +40,12 @@ class FollowIntegrationTest {
         var ids = new java.util.ArrayList<Long>();
         for (int i = 0; i < 21; i++) ids.add(follows.save(FollowRelation.create("owner", "target" + i)).getId());
         follows.save(FollowRelation.create("other", "target20"));
-        mvc.perform(get("/internal/v1/users/owner/followings")).andExpect(jsonPath("$.entries.length()").value(20))
-                .andExpect(jsonPath("$.entries[0].userKey").value("target20"))
+        mvc.perform(get("/internal/v1/members/owner/followings")).andExpect(jsonPath("$.entries.length()").value(20))
+                .andExpect(jsonPath("$.entries[0].memberKey").value("target20"))
                 .andExpect(jsonPath("$.nextCursor").value(ids.get(1))).andExpect(jsonPath("$.hasNext").value(true));
-        mvc.perform(get("/internal/v1/users/owner/followings").param("cursor", ids.get(1).toString()))
+        mvc.perform(get("/internal/v1/members/owner/followings").param("cursor", ids.get(1).toString()))
                 .andExpect(jsonPath("$.entries.length()").value(1)).andExpect(jsonPath("$.hasNext").value(false));
-        mvc.perform(get("/internal/v1/users/target20/followers")).andExpect(jsonPath("$.entries.length()").value(2));
+        mvc.perform(get("/internal/v1/members/target20/followers")).andExpect(jsonPath("$.entries.length()").value(2));
         mvc.perform(get("/internal/v1/follows/targets").param("requester", "owner").param("keys", "target20,missing"))
                 .andExpect(jsonPath("$[0]").value("target20")).andExpect(jsonPath("$.length()").value(1));
     }
@@ -57,7 +57,7 @@ class FollowIntegrationTest {
             var tasks = new java.util.ArrayList<Future<Integer>>();
             for (int i = 0; i < 6; i++) tasks.add(executor.submit(() -> {
                 start.await();
-                return mvc.perform(post("/api/v1/following/target").header("X-User-Key", "owner"))
+                return mvc.perform(post("/api/v1/following/target").header("X-Member-Key", "owner"))
                         .andReturn().getResponse().getStatus();
             }));
             start.countDown();

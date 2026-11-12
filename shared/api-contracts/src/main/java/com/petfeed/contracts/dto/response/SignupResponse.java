@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(staticName = "of")
 public class SignupResponse {
 
-    @com.fasterxml.jackson.annotation.JsonProperty("userKey")
     private String memberKey;
     private LocalDateTime createdAt;
 }

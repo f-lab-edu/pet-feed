@@ -42,7 +42,7 @@ public class FollowFacade {
         return MemberListResponse.of(result, hasNext ? page.getLast().getFollowId() : null, hasNext);
     }
 
-    public MemberProfileResponse profile(String key, String requester, MemberProfileResponse base) {
+    public com.petfeed.facade.model.FollowStatistics statistics(String key, String requester) {
         var authors = new HashMap<String, AuthorResponse>();
         requireActive(requester, authors);
         requireActive(key, authors);
@@ -50,7 +50,7 @@ public class FollowFacade {
         scan(key, 0L, true, authors, entry -> { counts[0] = Math.incrementExact(counts[0]); return true; });
         scan(key, 0L, false, authors, entry -> { counts[1] = Math.incrementExact(counts[1]); return true; });
         boolean following = !requester.equals(key) && follows.targets(requester, List.of(key)).contains(key);
-        return MemberProfileResponse.of(base.getNickname(), base.getProfileImageUrl(), base.getBio(), counts[0], counts[1], following, base.getPostCount());
+        return new com.petfeed.facade.model.FollowStatistics(counts[0], counts[1], following);
     }
 
     private void scan(String key, Long cursor, boolean followers, Map<String, AuthorResponse> authors,
@@ -58,7 +58,7 @@ public class FollowFacade {
         while (true) {
             var page = followers ? follows.followers(key, cursor) : follows.followings(key, cursor);
             for (var entry : page.getEntries()) {
-                if (author(entry.getMemberKey(), authors).getStatus() == MemberStatus.ACTIVE && !visitor.test(entry)) return;
+                if (author(entry.getMemberKey(), authors).getStatus() == AuthorStatus.ACTIVE && !visitor.test(entry)) return;
             }
             if (!page.isHasNext()) return;
             if (page.getNextCursor() == null || page.getNextCursor() <= 0 || (cursor > 0 && page.getNextCursor() >= cursor))
@@ -72,7 +72,7 @@ public class FollowFacade {
     }
 
     private void requireActive(String key, Map<String, AuthorResponse> authors) {
-        if (author(key, authors).getStatus() != MemberStatus.ACTIVE)
+        if (author(key, authors).getStatus() != AuthorStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Withdrawn members cannot use follow operations");
     }
 }

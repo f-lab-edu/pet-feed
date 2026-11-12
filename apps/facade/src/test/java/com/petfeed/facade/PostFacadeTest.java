@@ -16,7 +16,7 @@ class PostFacadeTest {
 
     @Test void withdrawnAuthorIsDisplayedAndOriginalPostIsPreserved() {
         var original = PostDetailResponse.of(1L, "owner", "hello", null, null, null, null);
-        var author = AuthorResponse.of(MemberStatus.WITHDRAWN, "(탈퇴한 회원)");
+        var author = AuthorResponse.of(AuthorStatus.WITHDRAWN, "(탈퇴한 회원)");
         when(posts.get(1L)).thenReturn(original);
         when(members.getAuthor("owner")).thenReturn(author);
         assertThat(facade.get(1L).getAuthor()).isSameAs(author);
@@ -24,7 +24,7 @@ class PostFacadeTest {
     }
 
     @Test void withdrawnMemberCannotWrite() {
-        when(members.getAuthor("owner")).thenReturn(AuthorResponse.of(MemberStatus.WITHDRAWN, "(탈퇴한 회원)"));
+        when(members.getAuthor("owner")).thenReturn(AuthorResponse.of(AuthorStatus.WITHDRAWN, "(탈퇴한 회원)"));
         var request = SavePostRequest.of("hello", null);
         assertThatThrownBy(() -> facade.create("owner", request)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
         assertThatThrownBy(() -> facade.update(1L, "owner", request)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
@@ -40,7 +40,7 @@ class PostFacadeTest {
     }
 
     @Test void activeMemberIsCheckedBeforeCreation() {
-        var author = AuthorResponse.of(MemberStatus.ACTIVE, "owner");
+        var author = AuthorResponse.of(AuthorStatus.ACTIVE, "owner");
         var request = SavePostRequest.of("hello", null);
         when(members.getAuthor("owner")).thenReturn(author);
         when(posts.create("owner", request)).thenReturn(PostDetailResponse.of(1L, "owner", "hello", null, null, null, null));

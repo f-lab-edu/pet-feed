@@ -6,7 +6,7 @@ import com.petfeed.contracts.dto.request.UpdateProfileRequest;
 import com.petfeed.contracts.dto.response.LoginResponse;
 import com.petfeed.contracts.dto.response.AuthorResponse;
 import com.petfeed.contracts.dto.response.SignupResponse;
-import com.petfeed.contracts.dto.response.MemberProfileResponse;
+import com.petfeed.contracts.dto.response.MemberInfoResponse;
 
 public interface MemberService {
 
@@ -14,7 +14,7 @@ public interface MemberService {
 
     SignupResponse signup(SignupRequest request);
 
-    MemberProfileResponse getProfile(String memberKey);
+    MemberInfoResponse getProfile(String memberKey);
 
     LoginResponse login(LoginRequest request);
 

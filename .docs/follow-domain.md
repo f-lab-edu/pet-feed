@@ -23,18 +23,18 @@
 
 | 외부 API | 동작 |
 | --- | --- |
-| POST /api/v1/following/{user-key} | 요청 회원이 대상을 팔로우. 성공 200, 중복 409, 자기 팔로우 400 |
-| DELETE /api/v1/following/{user-key} | 요청 회원이 대상 언팔로우. 관계 유무와 무관하게 성공 200 |
-| GET /api/v1/users/{user-key}/followers?cursor=0 | 정상 회원 팔로워 목록 |
-| GET /api/v1/users/{user-key}/followings?cursor=0 | 정상 회원 팔로잉 목록 |
-| GET /api/v1/users/{user-key} | 실제 팔로워·팔로잉 수, 요청자 기준 following 여부를 프로필에 조합 |
+| POST /api/v1/following/{member-key} | 요청 회원이 대상을 팔로우. 성공 200, 중복 409, 자기 팔로우 400 |
+| DELETE /api/v1/following/{member-key} | 요청 회원이 대상 언팔로우. 관계 유무와 무관하게 성공 200 |
+| GET /api/v1/members/{member-key}/followers?cursor=0 | 정상 회원 팔로워 목록 |
+| GET /api/v1/members/{member-key}/followings?cursor=0 | 정상 회원 팔로잉 목록 |
+| GET /api/v1/members/{member-key} | 실제 팔로워·팔로잉 수, 요청자 기준 following 여부를 프로필에 조합 |
 
-- Gateway의 JWT 인증과 X-User-Key 전달을 사용한다. 요청자 식별자는 클라이언트 본문에서 받지 않는다.
+- Gateway의 JWT 인증과 X-Member-Key 전달을 사용한다. 요청자 식별자는 클라이언트 본문에서 받지 않는다.
 - Facade가 두 회원의 존재·정상 상태를 확인한 후 생성한다. 탈퇴 회원은 403, 없는 회원은 회원 서비스의 404를 전파한다.
 - 목록·프로필 집계도 요청자와 조회 대상의 정상 상태를 요구한다. 언팔로우는 요청자의 정상 상태만 확인하므로 탈퇴 대상과의 관계를 제거할 수 있다.
 - follow-service는 방향·입력·중복·페이지 규칙과 데이터만 소유한다. 회원 상태 확인은 Facade 책임이다.
 - follow-service의 내부 목록은 상대 회원 키와 관계 ID만 반환한다. Facade가 현재 닉네임, profileImageUrl=null 및 요청자 기준 following 여부를 조합한다.
-- `GET /internal/v1/users/{key}/followers`, `/followings`는 관계 ID 내림차순 20개 목록이다.
+- `GET /internal/v1/members/{key}/followers`, `/followings`는 관계 ID 내림차순 20개 목록이다.
 - `GET /internal/v1/follows/targets?requester=...&keys=...`는 최대 20개 대상 중 요청자가 팔로우한 회원 키 집합을 반환한다.
 
 ## 탈퇴, 커서와 집계

@@ -1,7 +1,7 @@
 package com.petfeed.facade.controller;
 
 import com.petfeed.facade.client.*;
-import com.petfeed.contracts.dto.response.MemberStatus;
+import com.petfeed.contracts.dto.response.AuthorStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -28,7 +28,7 @@ public class MediaController {
 
     @PostMapping("/api/v1/media")
     public ResponseEntity<byte[]> upload(@RequestHeader(X_MEMBER_KEY) String owner, HttpServletRequest request) throws IOException {
-        if (members.getAuthor(owner).getStatus() != MemberStatus.ACTIVE)
+        if (members.getAuthor(owner).getStatus() != AuthorStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         byte[] body = request.getInputStream().readNBytes(MAX_BYTES + 1);
         if (body.length > MAX_BYTES) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);

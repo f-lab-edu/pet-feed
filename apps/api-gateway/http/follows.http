@@ -11,13 +11,13 @@ DELETE {{baseUrl}}/api/v1/following/{{targetKey}}
 Authorization: Bearer {{accessToken}}
 
 ### Active followers; pass nextCursor for the next page
-GET {{baseUrl}}/api/v1/users/{{targetKey}}/followers?cursor=0
+GET {{baseUrl}}/api/v1/members/{{targetKey}}/followers?cursor=0
 Authorization: Bearer {{accessToken}}
 
 ### Active followings
-GET {{baseUrl}}/api/v1/users/{{targetKey}}/followings?cursor=0
+GET {{baseUrl}}/api/v1/members/{{targetKey}}/followings?cursor=0
 Authorization: Bearer {{accessToken}}
 
 ### Profile includes active relationship counts and requester following flag
-GET {{baseUrl}}/api/v1/users/{{targetKey}}
+GET {{baseUrl}}/api/v1/members/{{targetKey}}
 Authorization: Bearer {{accessToken}}

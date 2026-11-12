@@ -18,26 +18,26 @@ class MediaContractTest {
     static final String ID = "c6bc523f-e474-42b0-9e57-7a4fe02c6785";
 
     @Test void uploadForwardsBytesAndAuthenticatedOwner() throws Exception {
-        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/users/uploader/author"))
+        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/members/uploader/author"))
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"owner\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.post(urlEqualTo("/internal/v1/media"))
                 .willReturn(aResponse().withStatus(201).withHeader("Content-Type", "application/json")
                         .withBody("{\"mediaId\":\"" + ID + "\",\"contentType\":\"video/mp4\",\"size\":3}")));
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/media").header("X-User-Key", "uploader").contentType("video/mp4")
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/media").header("X-Member-Key", "uploader").contentType("video/mp4")
                 .content(new byte[]{1, 2, 3})).andExpect(status().isCreated()).andExpect(jsonPath("$.mediaId").value(ID));
-        verify(postRequestedFor(urlEqualTo("/internal/v1/media")).withHeader("X-User-Key", equalTo("uploader"))
+        verify(postRequestedFor(urlEqualTo("/internal/v1/media")).withHeader("X-Member-Key", equalTo("uploader"))
                 .withHeader("Content-Type", equalTo("video/mp4")).withRequestBody(binaryEqualTo(new byte[]{1, 2, 3})));
     }
 
     @Test void foreignAttachmentPreventsPostWrite() throws Exception {
-        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/users/foreign-media-user/author"))
+        stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo("/internal/v1/members/foreign-media-user/author"))
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"owner\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.post(urlEqualTo("/internal/v1/media/validate"))
                 .willReturn(aResponse().withStatus(403)));
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/posts").header("X-User-Key", "foreign-media-user").contentType("application/json")
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/posts").header("X-Member-Key", "foreign-media-user").contentType("application/json")
                 .content("{\"content\":\"hello\",\"mediaIds\":[\"" + ID + "\"]}"))
                 .andExpect(status().isForbidden());
-        verify(0, postRequestedFor(urlEqualTo("/api/v1/posts")).withHeader("X-User-Key", equalTo("foreign-media-user")));
+        verify(0, postRequestedFor(urlEqualTo("/api/v1/posts")).withHeader("X-Member-Key", equalTo("foreign-media-user")));
     }
 
     @Test void contentRequiresVisiblePostAndMembershipAndPreservesRange() throws Exception {

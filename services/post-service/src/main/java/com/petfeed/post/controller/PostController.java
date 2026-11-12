@@ -32,11 +32,11 @@ public class PostController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key) { posts.delete(id, key); }
 
-    @GetMapping("/api/v1/posts/count/{user-key}")
-    public long count(@PathVariable("user-key") String key) { return posts.count(key); }
+    @GetMapping("/api/v1/posts/count/{member-key}")
+    public long count(@PathVariable("member-key") String key) { return posts.count(key); }
 
-    @GetMapping("/api/v1/users/{user-key}/posts")
-    public PostListResponse list(@PathVariable("user-key") String key,
+    @GetMapping("/api/v1/members/{member-key}/posts")
+    public PostListResponse list(@PathVariable("member-key") String key,
                                 @RequestParam(name = "cursor", defaultValue = "0") Long cursor) {
         return posts.list(key, cursor);
     }

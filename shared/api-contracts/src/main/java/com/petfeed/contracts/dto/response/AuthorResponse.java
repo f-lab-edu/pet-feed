@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor(staticName = "of")
 public class AuthorResponse {
-    private MemberStatus status;
+    private AuthorStatus status;
     private String displayName;
 }

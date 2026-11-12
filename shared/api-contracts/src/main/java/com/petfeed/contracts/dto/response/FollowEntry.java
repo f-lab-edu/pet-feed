@@ -7,6 +7,5 @@ import lombok.*;
 @AllArgsConstructor(staticName = "of")
 public class FollowEntry {
     private Long followId;
-    @com.fasterxml.jackson.annotation.JsonProperty("userKey")
     private String memberKey;
 }

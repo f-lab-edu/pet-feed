@@ -45,34 +45,38 @@ class MemberCrudIntegrationTest {
         assertThat(tokens.validateToken(login.get("accessToken").asText())).isTrue();
         assertThat(tokens.getMemberKey(login.get("accessToken").asText())).isEqualTo(key);
 
-        mvc.perform(get("/api/v1/users/{key}", key))
+        mvc.perform(get("/api/v1/members/{key}", key))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.nickname").value("owner"))
                 .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.postCount").doesNotExist())
+                .andExpect(jsonPath("$.followerCount").doesNotExist())
+                .andExpect(jsonPath("$.followingCount").doesNotExist())
+                .andExpect(jsonPath("$.following").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
 
-        mvc.perform(put("/api/v1/users/{key}", key).header("X-User-Key", key)
+        mvc.perform(put("/api/v1/members/{key}", key).header("X-Member-Key", key)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"bio\":\"new bio\",\"email\":\"new@example.com\"}"))
                 .andExpect(status().isNoContent());
-        mvc.perform(get("/api/v1/users/{key}", key))
+        mvc.perform(get("/api/v1/members/{key}", key))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.bio").value("new bio"));
         assertThat(members.findById(key).orElseThrow().getEmail()).isEqualTo("new@example.com");
         loginStatus("owner@example.com", "secret123!", 401);
         loginStatus("new@example.com", "secret123!", 200);
 
-        mvc.perform(delete("/api/v1/users/{key}", key).header("X-User-Key", key))
+        mvc.perform(delete("/api/v1/members/{key}", key).header("X-Member-Key", key))
                 .andExpect(status().isNoContent());
         var withdrawn = members.findById(key).orElseThrow();
-        assertThat(withdrawn.getStatus()).isEqualTo(com.petfeed.contracts.dto.response.MemberStatus.WITHDRAWN);
+        assertThat(withdrawn.getStatus()).isEqualTo(com.petfeed.member.domain.MemberStatus.WITHDRAWN);
         assertThat(withdrawn.getNickname()).isEqualTo("owner");
-        mvc.perform(get("/internal/v1/users/{key}/author", key))
+        mvc.perform(get("/internal/v1/members/{key}/author", key))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("WITHDRAWN"))
                 .andExpect(jsonPath("$.displayName").value("(탈퇴한 회원)"))
                 .andExpect(jsonPath("$.email").doesNotExist());
-        mvc.perform(get("/api/v1/users/{key}", key)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/members/{key}", key)).andExpect(status().isNotFound());
         loginStatus("new@example.com", "secret123!", 401);
-        mvc.perform(delete("/api/v1/users/{key}", key).header("X-User-Key", key))
+        mvc.perform(delete("/api/v1/members/{key}", key).header("X-Member-Key", key))
                 .andExpect(status().isNotFound());
     }
 
@@ -80,15 +84,15 @@ class MemberCrudIntegrationTest {
     void duplicateSignupAndEmailUpdateAreRejected() throws Exception {
         String owner = signup("owner@example.com");
         String other = signup("other@example.com");
-        mvc.perform(post("/api/v1/users/signup").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/v1/members/signup").contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody("OWNER@example.com")))
                 .andExpect(status().isConflict());
-        mvc.perform(put("/api/v1/users/{key}", other).header("X-User-Key", other)
+        mvc.perform(put("/api/v1/members/{key}", other).header("X-Member-Key", other)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"owner@example.com\",\"bio\":\"changed\"}"))
                 .andExpect(status().isConflict());
         assertThat(members.findById(other).orElseThrow().getBio()).isNull();
-        mvc.perform(put("/api/v1/users/{key}", owner).header("X-User-Key", owner)
+        mvc.perform(put("/api/v1/members/{key}", owner).header("X-Member-Key", owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"owner@example.com\"}"))
                 .andExpect(status().isNoContent());
         assertThat(members.count()).isEqualTo(2);
@@ -96,15 +100,15 @@ class MemberCrudIntegrationTest {
 
     @Test
     void invalidInputsAreRejectedWithoutWriting() throws Exception {
-        mvc.perform(post("/api/v1/users/signup").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/v1/members/signup").contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody("invalid"))).andExpect(status().isBadRequest());
-        mvc.perform(post("/api/v1/users/signup").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/v1/members/signup").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"valid@example.com\",\"password\":\"\",\"phone\":\"\",\"nickname\":\"\"}"))
                 .andExpect(status().isBadRequest());
         assertThat(members.count()).isZero();
         String key = signup("owner@example.com");
         for (String email : new String[]{"invalid", "", "   "}) {
-            mvc.perform(put("/api/v1/users/{key}", key).header("X-User-Key", key)
+            mvc.perform(put("/api/v1/members/{key}", key).header("X-Member-Key", key)
                             .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("email", email))))
                     .andExpect(status().isBadRequest());
         }
@@ -116,20 +120,20 @@ class MemberCrudIntegrationTest {
         String key = signup("owner@example.com");
         loginStatus("owner@example.com", "wrong", 401);
         loginStatus("missing@example.com", "secret123!", 401);
-        mvc.perform(put("/api/v1/users/{key}", key).header("X-User-Key", "other")
+        mvc.perform(put("/api/v1/members/{key}", key).header("X-Member-Key", "other")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"bio\":\"changed\"}"))
                 .andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/users/{key}", key).header("X-User-Key", "other"))
+        mvc.perform(delete("/api/v1/members/{key}", key).header("X-Member-Key", "other"))
                 .andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/users/{key}", key)).andExpect(status().isBadRequest());
+        mvc.perform(delete("/api/v1/members/{key}", key)).andExpect(status().isBadRequest());
         assertThat(members.findById(key).orElseThrow().getBio()).isNull();
     }
 
     private String signup(String email) throws Exception {
-        String body = mvc.perform(post("/api/v1/users/signup").contentType(MediaType.APPLICATION_JSON)
+        String body = mvc.perform(post("/api/v1/members/signup").contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody(email))).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.createdAt").exists()).andReturn().getResponse().getContentAsString();
-        return json.readTree(body).get("userKey").asText();
+        return json.readTree(body).get("memberKey").asText();
     }
 
     private void loginStatus(String email, String password, int statusCode) throws Exception {

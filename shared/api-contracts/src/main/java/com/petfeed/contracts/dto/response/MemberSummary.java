@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(staticName = "of")
 public class MemberSummary {
 
-    @com.fasterxml.jackson.annotation.JsonProperty("userKey")
     private String memberKey;
     private String nickname;
     private String profileImageUrl;

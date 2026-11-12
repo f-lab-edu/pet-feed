@@ -27,10 +27,10 @@ public interface PostFeignClient {
     void delete(@PathVariable("id") Long id,
             @RequestHeader(X_MEMBER_KEY) String key);
 
-    @GetMapping("/api/v1/posts/count/{user-key}")
-    Long getPostCount(@PathVariable("user-key") String memberKey);
+    @GetMapping("/api/v1/posts/count/{member-key}")
+    Long getPostCount(@PathVariable("member-key") String memberKey);
 
-    @GetMapping("/api/v1/users/{user-key}/posts")
-    PostListResponse getPostsByMember(@PathVariable("user-key") String memberKey,
+    @GetMapping("/api/v1/members/{member-key}/posts")
+    PostListResponse getPostsByMember(@PathVariable("member-key") String memberKey,
                                     @RequestParam(defaultValue = "0") Long cursor);
 }

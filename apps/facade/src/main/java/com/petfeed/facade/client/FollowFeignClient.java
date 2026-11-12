@@ -12,9 +12,9 @@ public interface FollowFeignClient {
     void follow(@PathVariable("key") String key, @RequestHeader(X_MEMBER_KEY) String requester);
     @DeleteMapping("/api/v1/following/{key}")
     void unfollow(@PathVariable("key") String key, @RequestHeader(X_MEMBER_KEY) String requester);
-    @GetMapping("/internal/v1/users/{key}/followers")
+    @GetMapping("/internal/v1/members/{key}/followers")
     FollowPage followers(@PathVariable("key") String key, @RequestParam("cursor") Long cursor);
-    @GetMapping("/internal/v1/users/{key}/followings")
+    @GetMapping("/internal/v1/members/{key}/followings")
     FollowPage followings(@PathVariable("key") String key, @RequestParam("cursor") Long cursor);
     @GetMapping("/internal/v1/follows/targets")
     Set<String> targets(@RequestParam("requester") String requester, @RequestParam("keys") List<String> keys);

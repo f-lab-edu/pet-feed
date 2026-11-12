@@ -14,7 +14,7 @@ class FollowFacadeTest {
     private final MemberFeignClient members = mock(MemberFeignClient.class);
     private final FollowFacade facade = new FollowFacade(follows, members);
 
-    private void active(String key) { when(members.getAuthor(key)).thenReturn(AuthorResponse.of(MemberStatus.ACTIVE, key)); }
+    private void active(String key) { when(members.getAuthor(key)).thenReturn(AuthorResponse.of(AuthorStatus.ACTIVE, key)); }
 
     @Test void createRequiresBothActiveMembersAndForwardsRequester() {
         active("owner"); active("target");
@@ -28,7 +28,7 @@ class FollowFacadeTest {
     @Test void selfFollowAndWithdrawnTargetNeverWrite() {
         assertThatThrownBy(() -> facade.follow("owner", "owner")).isInstanceOf(ResponseStatusException.class);
         active("owner");
-        when(members.getAuthor("target")).thenReturn(AuthorResponse.of(MemberStatus.WITHDRAWN, "withdrawn"));
+        when(members.getAuthor("target")).thenReturn(AuthorResponse.of(AuthorStatus.WITHDRAWN, "withdrawn"));
         assertThatThrownBy(() -> facade.follow("owner", "target")).isInstanceOf(ResponseStatusException.class);
         verifyNoInteractions(follows);
     }
@@ -53,7 +53,7 @@ class FollowFacadeTest {
         var inactive = new ArrayList<FollowEntry>();
         for (int i = 0; i < 20; i++) {
             String key = "withdrawn" + i;
-            when(members.getAuthor(key)).thenReturn(AuthorResponse.of(MemberStatus.WITHDRAWN, "withdrawn"));
+            when(members.getAuthor(key)).thenReturn(AuthorResponse.of(AuthorStatus.WITHDRAWN, "withdrawn"));
             inactive.add(FollowEntry.of(100L - i, key));
         }
         var activeEntries = new ArrayList<FollowEntry>();
@@ -74,16 +74,16 @@ class FollowFacadeTest {
 
     @Test void profileCountsOnlyActiveRelationshipsAndUsesRequesterForFollowingFlag() {
         active("owner"); active("viewer"); active("friend");
-        when(members.getAuthor("withdrawn")).thenReturn(AuthorResponse.of(MemberStatus.WITHDRAWN, "withdrawn"));
+        when(members.getAuthor("withdrawn")).thenReturn(AuthorResponse.of(AuthorStatus.WITHDRAWN, "withdrawn"));
         when(follows.followers("owner", 0L)).thenReturn(FollowPage.of(List.of(
                 FollowEntry.of(2L, "friend"), FollowEntry.of(1L, "withdrawn")), null, false));
         when(follows.followings("owner", 0L)).thenReturn(FollowPage.of(List.of(FollowEntry.of(3L, "withdrawn")), null, false));
         when(follows.targets("viewer", List.of("owner"))).thenReturn(Set.of("owner"));
-        var profile = facade.profile("owner", "viewer", MemberProfileResponse.of("owner", null, "bio", 0, 0, false, 5));
-        assertThat(profile.getFollowerCount()).isEqualTo(1);
-        assertThat(profile.getFollowingCount()).isZero();
-        assertThat(profile.isFollowing()).isTrue();
-        assertThat(profile.getPostCount()).isEqualTo(5);
+        var profile = facade.statistics("owner", "viewer");
+        assertThat(profile.followerCount()).isEqualTo(1);
+        assertThat(profile.followingCount()).isZero();
+        assertThat(profile.following()).isTrue();
+
         verify(members, times(1)).getAuthor("withdrawn");
     }
 }

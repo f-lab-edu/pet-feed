@@ -11,7 +11,6 @@ import java.util.List;
 @AllArgsConstructor(staticName = "of")
 public class MemberListResponse {
 
-    @com.fasterxml.jackson.annotation.JsonProperty("users")
     private List<MemberSummary> members;
     private Long nextCursor;
     private boolean hasNext;

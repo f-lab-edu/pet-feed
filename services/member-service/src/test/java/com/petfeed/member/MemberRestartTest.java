@@ -2,7 +2,7 @@ package com.petfeed.member;
 
 import com.petfeed.member.domain.Member;
 import com.petfeed.member.repository.MemberRepository;
-import com.petfeed.contracts.dto.response.MemberStatus;
+import com.petfeed.member.domain.MemberStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.builder.SpringApplicationBuilder;

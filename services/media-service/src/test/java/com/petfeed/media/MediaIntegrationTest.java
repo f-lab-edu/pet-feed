@@ -39,7 +39,7 @@ class MediaIntegrationTest {
     }
 
     String upload(byte[] body, String type) throws Exception {
-        var response = mvc.perform(post("/internal/v1/media").header("X-User-Key", "owner")
+        var response = mvc.perform(post("/internal/v1/media").header("X-Member-Key", "owner")
                         .contentType(type).content(body)).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.contentType").value(type)).andReturn().getResponse();
         return json.readTree(response.getContentAsString()).get("mediaId").asText();
@@ -51,10 +51,10 @@ class MediaIntegrationTest {
             String id = upload(data, "image/" + format);
             mvc.perform(get("/internal/v1/media/{id}/content", id)).andExpect(status().isOk())
                     .andExpect(content().bytes(data)).andExpect(header().string("Cache-Control", "no-store"));
-            mvc.perform(post("/internal/v1/media/validate").header("X-User-Key", "owner")
+            mvc.perform(post("/internal/v1/media/validate").header("X-Member-Key", "owner")
                     .contentType("application/json").content("[\"" + id + "\"]"))
                     .andExpect(status().isOk()).andExpect(jsonPath("$[0].mediaId").value(id));
-            mvc.perform(post("/internal/v1/media/validate").header("X-User-Key", "other")
+            mvc.perform(post("/internal/v1/media/validate").header("X-Member-Key", "other")
                     .contentType("application/json").content("[\"" + id + "\"]"))
                     .andExpect(status().isForbidden());
         }
@@ -62,14 +62,14 @@ class MediaIntegrationTest {
 
     @Test void rejectsSpoofedEmptyOversizedAndMissingUploads() throws Exception {
         long before = files.count();
-        mvc.perform(post("/internal/v1/media").header("X-User-Key", "owner")
+        mvc.perform(post("/internal/v1/media").header("X-Member-Key", "owner")
                 .contentType("image/png").content("<script>alert(1)</script>"))
                 .andExpect(status().isUnsupportedMediaType());
-        mvc.perform(post("/internal/v1/media").header("X-User-Key", "owner")
+        mvc.perform(post("/internal/v1/media").header("X-Member-Key", "owner")
                 .contentType("image/jpeg").content(image("png"))).andExpect(status().isUnsupportedMediaType());
-        mvc.perform(post("/internal/v1/media").header("X-User-Key", "owner")
+        mvc.perform(post("/internal/v1/media").header("X-Member-Key", "owner")
                 .contentType("video/mp4").content(new byte[0])).andExpect(status().isUnsupportedMediaType());
-        mvc.perform(post("/internal/v1/media").header("X-User-Key", "owner")
+        mvc.perform(post("/internal/v1/media").header("X-Member-Key", "owner")
                 .contentType("image/png").content(new byte[10 * 1024 * 1024 + 1])).andExpect(status().isPayloadTooLarge());
         mvc.perform(post("/internal/v1/media").contentType("image/png").content(image("png")))
                 .andExpect(status().isBadRequest());

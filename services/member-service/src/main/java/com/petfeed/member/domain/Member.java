@@ -1,7 +1,7 @@
 package com.petfeed.member.domain;
 
 import jakarta.persistence.*;
-import com.petfeed.contracts.dto.response.MemberStatus;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AccessLevel;

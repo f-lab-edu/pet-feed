@@ -6,6 +6,7 @@ import com.petfeed.contracts.dto.response.PostListResponse;
 import com.petfeed.contracts.dto.response.SignupResponse;
 import com.petfeed.contracts.dto.response.MemberListResponse;
 import com.petfeed.contracts.dto.response.MemberProfileResponse;
+import com.petfeed.contracts.dto.response.MemberInfoResponse;
 import com.petfeed.facade.client.PostFeignClient;
 import com.petfeed.facade.client.MemberFeignClient;
 import com.petfeed.facade.client.CommentFeignClient;
@@ -19,21 +20,23 @@ public class MemberFacade {
     private final MemberFeignClient memberFeignClient;
     private final PostFeignClient postFeignClient;
     private final CommentFeignClient commentFeignClient;
+    private final FollowFacade followFacade;
 
     public SignupResponse signup(SignupRequest request) {
         return memberFeignClient.signup(request);
     }
 
-    public MemberProfileResponse getProfile(String memberKey) {
-        MemberProfileResponse profile = memberFeignClient.getProfile(memberKey);
+    public MemberProfileResponse getProfile(String memberKey, String requesterKey) {
+        MemberInfoResponse profile = memberFeignClient.getProfile(memberKey);
         long postCount = postFeignClient.getPostCount(memberKey);
+        var follows = followFacade.statistics(memberKey, requesterKey);
         return MemberProfileResponse.of(
                 profile.getNickname(),
                 profile.getProfileImageUrl(),
                 profile.getBio(),
-                profile.getFollowerCount(),
-                profile.getFollowingCount(),
-                profile.isFollowing(),
+                follows.followerCount(),
+                follows.followingCount(),
+                follows.following(),
                 postCount
         );
     }

@@ -4,6 +4,7 @@ import com.petfeed.contracts.dto.request.*;
 import com.petfeed.contracts.dto.response.*;
 import com.petfeed.infrastructure.jwt.JwtTokenProvider;
 import com.petfeed.member.domain.Member;
+import com.petfeed.member.domain.MemberStatus;
 import com.petfeed.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,9 +48,9 @@ public class DefaultMemberService implements MemberService {
     }
 
     @Override
-    public MemberProfileResponse getProfile(String memberKey) {
+    public MemberInfoResponse getProfile(String memberKey) {
         Member member = requireMember(memberKey);
-        return MemberProfileResponse.of(member.getNickname(), null, member.getBio(), 0, 0, false, 0);
+        return MemberInfoResponse.of(member.getNickname(), null, member.getBio());
     }
 
     @Override
@@ -75,7 +76,11 @@ public class DefaultMemberService implements MemberService {
     public AuthorResponse getAuthor(String memberKey) {
         Member member = members.findById(memberKey)
                 .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Member not found"));
-        return AuthorResponse.of(member.getStatus(), member.getStatus() == MemberStatus.WITHDRAWN
+        AuthorStatus status = switch (member.getStatus()) {
+            case ACTIVE -> AuthorStatus.ACTIVE;
+            case WITHDRAWN -> AuthorStatus.WITHDRAWN;
+        };
+        return AuthorResponse.of(status, member.getStatus() == MemberStatus.WITHDRAWN
                 ? "(탈퇴한 회원)" : member.getNickname());
     }
 

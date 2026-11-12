@@ -1,4 +1,4 @@
-package com.petfeed.contracts.dto.response;
+package com.petfeed.member.domain;
 
 public enum MemberStatus {
     ACTIVE, WITHDRAWN

@@ -39,7 +39,7 @@ async function request(path, {method = 'GET', body, type, headers = {}, expected
 await request('/media', {method: 'POST', type: 'image/png', body: png(), expected: 403});
 const nonce = Date.now();
 const login = {email: `media-smoke-${nonce}@example.test`, password: `LocalTest!${nonce}`};
-await request('/users/signup', {method: 'POST', body: {...login, nickname: '미디어 검증', phone: '01000000000'}, expected: 201});
+await request('/members/signup', {method: 'POST', body: {...login, nickname: '미디어 검증', phone: '01000000000'}, expected: 201});
 token = (await (await request('/auth/login', {method: 'POST', body: login})).json()).accessToken;
 assert.ok(token);
 const photo = png();

@@ -124,7 +124,7 @@ class DefaultMemberServiceTest {
         String key = member.getMemberKey();
         when(members.findById(key)).thenReturn(Optional.of(member));
         service.delete(key, key);
-        assertThat(member.getStatus()).isEqualTo(com.petfeed.contracts.dto.response.MemberStatus.WITHDRAWN);
+        assertThat(member.getStatus()).isEqualTo(com.petfeed.member.domain.MemberStatus.WITHDRAWN);
         verify(members, never()).delete(any());
     }
 
@@ -144,10 +144,10 @@ class DefaultMemberServiceTest {
     void authorLookupDistinguishesActiveWithdrawnAndMissingMembers() {
         String key = member.getMemberKey();
         when(members.findById(key)).thenReturn(Optional.of(member));
-        assertThat(service.getAuthor(key).getStatus()).isEqualTo(com.petfeed.contracts.dto.response.MemberStatus.ACTIVE);
+        assertThat(service.getAuthor(key).getStatus()).isEqualTo(com.petfeed.contracts.dto.response.AuthorStatus.ACTIVE);
         assertThat(service.getAuthor(key).getDisplayName()).isEqualTo("owner");
         member.withdraw();
-        assertThat(service.getAuthor(key).getStatus()).isEqualTo(com.petfeed.contracts.dto.response.MemberStatus.WITHDRAWN);
+        assertThat(service.getAuthor(key).getStatus()).isEqualTo(com.petfeed.contracts.dto.response.AuthorStatus.WITHDRAWN);
         assertThat(service.getAuthor(key).getDisplayName()).isEqualTo("(탈퇴한 회원)");
         assertThat(member.getNickname()).isEqualTo("owner");
         assertStatus(() -> service.getAuthor("missing"), HttpStatus.NOT_FOUND);

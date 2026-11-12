@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 public class CommentResponse {
     private Long commentId;
     private Long postId;
-    @com.fasterxml.jackson.annotation.JsonProperty("userKey")
     private String memberKey;
     private String content;
     private LocalDateTime createdAt;
