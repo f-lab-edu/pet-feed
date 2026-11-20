@@ -45,7 +45,8 @@ class PostRestartTest {
             var task = tasks.findById(deletedId).orElseThrow();
             assertThat(task.getAttempts()).isEqualTo(1);
             context.getBean(JdbcTemplate.class).update(
-                    "update comment_cleanup_tasks set next_attempt_at = current_timestamp where post_id = ?", deletedId);
+                    "update comment_cleanup_tasks set next_attempt_at = ? where post_id = ?",
+                    java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(1), deletedId);
             new CommentCleanupScheduler(tasks, context.getBean(CommentCleanupProcessor.class)).poll();
             verify(context.getBean(CommentCleanupClient.class)).close(deletedId);
             assertThat(tasks.existsById(deletedId)).isFalse();

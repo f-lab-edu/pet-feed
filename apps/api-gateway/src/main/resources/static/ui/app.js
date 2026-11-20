@@ -143,10 +143,15 @@ async function api(path, method = 'GET', body) {
   const raw = await response.text();
   let data; try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
   if (!response.ok) {
-    const messages = {400: '입력 내용을 확인해 주세요.', 401: '로그인이 필요하거나 세션이 만료됐어요.', 403: '접근 권한이 없어요. 로그인 상태와 작성자를 확인해 주세요.', 404: '해당 기록이나 회원을 찾을 수 없어요.', 409: '이미 사용 중인 정보예요.'};
+    const messages = {400: '입력 내용을 확인해 주세요.', 401: '로그인이 필요하거나 세션이 만료됐어요.', 403: '접근 권한이 없어요. 로그인 상태와 작성자를 확인해 주세요.', 404: '해당 기록이나 회원을 찾을 수 없어요.', 409: '이미 사용 중인 정보예요.', 410: '피드가 만료됐어요. 새로고침으로 새로운 기록을 만나보세요.'};
     throw new Error(messages[response.status] || data?.detail || data?.message || `요청에 실패했어요. (${response.status})`);
   }
   return data;
+}
+function feedDescription() {
+  if (state.mode === 'demo') return '함께 나누는 오늘의 순간';
+  if (state.target) return `회원 ${state.target}의 기록`;
+  return state.token ? '팔로우한 친구들의 소식과 새롭게 만나는 기록' : '로그인 후 새로운 기록을 만나보세요';
 }
 function syncChrome() {
   $('#mode-badge').textContent = state.mode === 'demo' ? '데모 모드' : '실제 API';
@@ -157,7 +162,7 @@ function syncChrome() {
   $('#feed-title').textContent = state.target === me() ? '나의 기록 ☀' : '우리들의 기록 ☀';
   $('#home-button').classList.toggle('active', state.target !== me());
   $('#mine-button').classList.toggle('active', state.target === me());
-  $('#feed-description').textContent = state.mode === 'demo' ? '함께 나누는 오늘의 순간' : state.target ? `회원 ${state.target}의 기록` : '로그인 후 내 기록을 확인해 보세요';
+  $('#feed-description').textContent = feedDescription();
 }
 function renderPosts() {
   for (const url of feedMediaUrls) URL.revokeObjectURL(url);
@@ -176,6 +181,23 @@ function renderPosts() {
   $('#feed').querySelectorAll('img').forEach(img => img.addEventListener('error', () => { img.closest('.post-image').hidden = true; }));
   $('#feed').querySelectorAll('.load-attachment').forEach(button => button.addEventListener('click', () => loadAttachment(button)));
 }
+async function fetchPostPage(append, cursor) {
+  if (state.mode === 'demo') {
+    return {posts: demoData.posts.filter(post => !state.target || post.memberKey === state.target)
+      .sort((a,b) => b.postId - a.postId), next: null};
+  }
+  if (!state.token) return {posts: [], next: null, message: '실제 데이터를 보려면 로그인해 주세요.'};
+  if (!state.target) return fetchHomePage(append, cursor);
+  const page = await api(`/members/${encodeURIComponent(state.target)}/posts?cursor=${cursor}`);
+  const posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
+  return {posts, next: page.hasNext ? page.nextCursor : null};
+}
+async function fetchHomePage(append, cursor) {
+  const path = append && cursor ? `/feed?cursor=${encodeURIComponent(cursor)}` : '/feed';
+  const page = await api(path);
+  return {posts: page.items.map(item => ({...item.post, commentCount: item.commentCount, feedSource: item.source})),
+    next: page.hasNext ? page.nextCursor : null};
+}
 async function loadPosts(append = false) {
   const generation = ++state.generation;
   const cursor = append ? state.cursor : 0;
@@ -184,23 +206,11 @@ async function loadPosts(append = false) {
   notice();
   syncChrome();
   try {
-    let posts, next;
-    if (state.mode === 'demo') {
-      posts = demoData.posts.filter(post => !state.target || post.memberKey === state.target).sort((a,b) => b.postId - a.postId);
-      next = null;
-    } else {
-      if (!state.token || !state.target) {
-        state.posts = []; state.cursor = null; renderPosts();
-        notice(state.token ? '조회할 회원 키를 입력해 주세요.' : '실제 데이터를 보려면 로그인해 주세요.');
-        return;
-      }
-      const page = await api(`/members/${encodeURIComponent(state.target)}/posts?cursor=${cursor}`);
-      posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
-      next = page.hasNext ? page.nextCursor : null;
-    }
+    const {posts, next, message} = await fetchPostPage(append, cursor);
     if (generation !== state.generation) return;
     state.posts = append ? [...state.posts, ...posts] : posts;
     state.cursor = next; state.commentPages.clear(); renderPosts();
+    if (message) notice(message);
   } catch (error) { if (generation === state.generation) { state.posts = []; state.cursor = null; renderPosts(); notice(error.message, true); } }
   finally { if (generation === state.generation) { $('#feed').setAttribute('aria-busy', 'false'); $('#more-posts').disabled = false; } }
 }
@@ -375,7 +385,7 @@ $('#auth-form').addEventListener('submit', async event => {
       const response = await api('/auth/login', 'POST', body);
       const key = tokenKey(response.accessToken);
       if (!key) throw new Error('로그인 응답의 사용자 정보를 확인할 수 없어요.');
-      state.token = response.accessToken; state.memberKey = key; state.target = key; state.mode = 'api';
+      state.token = response.accessToken; state.memberKey = key; state.target = ''; state.mode = 'api';
       persist(sessionStorage, 'petfeed-token', state.token);
       $('#password').value = ''; $('#auth-dialog').close(); await loadPosts();
     }
@@ -386,12 +396,12 @@ $('#account-button').addEventListener('click', async () => {
   if (state.mode === 'api' && state.token) { state.token = ''; state.memberKey = ''; state.target = ''; persist(sessionStorage, 'petfeed-token', ''); await loadPosts(); }
   else openAuth();
 });
-$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = state.mode === 'demo' ? '' : state.memberKey; await loadPosts(); });
+$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = ''; await loadPosts(); });
 $('#compose-button').addEventListener('click', () => openEditor('post'));
 $('#write-button').addEventListener('click', () => openEditor('post'));
 $('#refresh-button').addEventListener('click', () => loadPosts());
 $('#more-posts').addEventListener('click', () => loadPosts(true));
-$('#home-button').addEventListener('click', async () => { state.target = state.mode === 'demo' ? '' : me(); await loadPosts(); });
+$('#home-button').addEventListener('click', async () => { state.target = ''; await loadPosts(); });
 $('#mine-button').addEventListener('click', async () => { if (!canWrite()) return; state.target = me(); await loadPosts(); });
 $('#search-form').addEventListener('submit', async event => { event.preventDefault(); state.target = $('#member-key').value.trim(); await loadPosts(); });
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
