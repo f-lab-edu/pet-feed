@@ -1,5 +1,7 @@
 package com.petfeed.facade.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.contracts.dto.request.LoginRequest;
 import com.petfeed.contracts.dto.response.LoginResponse;
 import jakarta.validation.Valid;
@@ -11,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping(ApiPaths.API_V1 + "/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

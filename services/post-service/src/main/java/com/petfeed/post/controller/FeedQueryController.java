@@ -1,5 +1,7 @@
 package com.petfeed.post.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.contracts.dto.response.FeedCandidate;
 import com.petfeed.contracts.dto.response.PostDetailResponse;
 import com.petfeed.post.repository.PostRepository;
@@ -15,7 +17,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@RequestMapping("/internal/v1/feed")
+@RequestMapping(ApiPaths.INTERNAL_V1 + "/feed")
 public class FeedQueryController {
     private final PostRepository posts;
 

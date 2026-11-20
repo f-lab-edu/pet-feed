@@ -1,5 +1,7 @@
 package com.petfeed.media.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.media.service.*;
 import com.petfeed.contracts.dto.response.MediaResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +16,7 @@ import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/internal/v1/media")
+@RequestMapping(ApiPaths.INTERNAL_V1 + "/media")
 public class MediaController {
     private final MediaService media;
 

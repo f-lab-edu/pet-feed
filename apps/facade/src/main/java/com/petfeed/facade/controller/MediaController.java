@@ -1,5 +1,7 @@
 package com.petfeed.facade.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.facade.client.*;
 import com.petfeed.contracts.dto.response.AuthorStatus;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,14 +28,14 @@ public class MediaController {
         this.client = builder.baseUrl(url).build();
     }
 
-    @PostMapping("/api/v1/media")
+    @PostMapping(ApiPaths.API_V1 + "/media")
     public ResponseEntity<byte[]> upload(@RequestHeader(X_MEMBER_KEY) String owner, HttpServletRequest request) throws IOException {
         if (members.getAuthor(owner).getStatus() != AuthorStatus.ACTIVE)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         byte[] body = request.getInputStream().readNBytes(MAX_BYTES + 1);
         if (body.length > MAX_BYTES) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
         try {
-            return client.post().uri("/internal/v1/media").header(X_MEMBER_KEY, owner)
+            return client.post().uri(ApiPaths.INTERNAL_V1 + "/media").header(X_MEMBER_KEY, owner)
                     .contentType(MediaType.parseMediaType(request.getContentType() == null ? "application/octet-stream" : request.getContentType()))
                     .body(body).retrieve().toEntity(byte[].class);
         } catch (RestClientResponseException failure) {
@@ -41,14 +43,14 @@ public class MediaController {
         }
     }
 
-    @GetMapping("/api/v1/posts/{postId}/media/{mediaId}")
+    @GetMapping(ApiPaths.API_V1 + "/posts/{postId}/media/{mediaId}")
     public ResponseEntity<byte[]> content(@PathVariable("postId") Long postId, @PathVariable("mediaId") String mediaId,
             @RequestHeader(value = "Range", required = false) String range) {
         var post = posts.get(postId);
         if (post.getMediaIds() == null || !post.getMediaIds().contains(mediaId))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         try {
-            return client.get().uri("/internal/v1/media/{id}/content", mediaId)
+            return client.get().uri(ApiPaths.INTERNAL_V1 + "/media/{id}/content", mediaId)
                     .headers(headers -> { if (range != null) headers.set("Range", range); })
                     .retrieve().toEntity(byte[].class);
         } catch (RestClientResponseException failure) {

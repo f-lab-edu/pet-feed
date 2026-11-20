@@ -1,5 +1,6 @@
 /* Temporary client: demo data stays local; API requests use the Gateway origin. */
 'use strict';
+const API_V1 = '/api/v1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeImage = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } };
@@ -28,7 +29,7 @@ const feedMediaUrls = new Set();
 let editorBusy = false;
 
 async function fetchMedia(postId, mediaId) {
-  const response = await fetch(`/api/v1/posts/${postId}/media/${encodeURIComponent(mediaId)}`, {
+  const response = await fetch(`${API_V1}/posts/${postId}/media/${encodeURIComponent(mediaId)}`, {
     headers: {Authorization: `Bearer ${state.token}`}
   });
   if (!response.ok) throw new Error(response.status === 401 || response.status === 403
@@ -103,7 +104,7 @@ async function uploadAttachments() {
     const item = attachments[index];
     if (item.mediaId) continue;
     $('#upload-status').textContent = `첨부 업로드 중 ${index + 1} / ${attachments.length} · ${item.file.name}`;
-    const response = await fetch('/api/v1/media', {method: 'POST',
+    const response = await fetch(`${API_V1}/media`, {method: 'POST',
       headers: {Authorization: `Bearer ${state.token}`, 'Content-Type': item.type}, body: item.file});
     if (!response.ok) {
       const messages = {413: '파일이 너무 커요.', 415: '파일 형식을 확인해 주세요. JPEG·PNG·MP4 파일만 지원해요.', 401: '다시 로그인해 주세요.', 403: '파일 업로드 권한이 없어요.'};
@@ -138,7 +139,7 @@ async function api(path, method = 'GET', body) {
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   let response;
-  try { response = await fetch(`/api/v1${path}`, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)}); }
+  try { response = await fetch(`${API_V1}${path}`, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)}); }
   catch { throw new Error('서버에 연결할 수 없어요. Gateway와 각 서비스 실행 상태를 확인해 주세요.'); }
   const raw = await response.text();
   let data; try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
