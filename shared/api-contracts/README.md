@@ -3,6 +3,9 @@
 서비스 간 HTTP 요청·응답 DTO와 헤더 이름을 공유하는 모듈이다. 기존 `common-domain`에는 공통 엔티티나 도메인 로직이 없었으므로 실제 역할에 맞게 이름을 변경했다.
 
 - Java 패키지: `com.petfeed.contracts`
+- HTTP 프리픽스는 `http.ApiPaths`를 사용한다. `API_V1`은 `/api/v1`, `INTERNAL_V1`은 `/internal/v1`이며 뒤에 리소스 경로를 연결한다. 컨트롤러, Feign·RestClient, Gateway 보안 설정에서 같은 상수를 참조한다.
+- `API_ROOT`는 Gateway의 기존 `/api/**` 프록시 범위에 사용한다. 새 버전은 기존 `API_V1` 값을 바꾸지 않고 별도 상수로 추가한다. HTTP 계약 테스트는 실제 URL 문자열을 유지해 경로 변경을 감지한다.
+- 정적 UI는 Java 상수를 직접 참조하지 않으므로 `app.js`의 `API_V1`에 프리픽스를 모은다. UI 회귀 테스트에서 실제 요청 URL을 검증한다.
 - 엔티티, 저장소, 비즈니스 규칙은 각각의 서비스에 둔다.
 - JWT 구현은 `common-infrastructure`, 프록시 오류 전달용 `DownstreamException`은 Gateway가 소유한다.
 - `MemberStatus`는 member-service 도메인이 소유한다. 외부 작성자 응답에는 별도의 `AuthorStatus`를 사용하고 서비스 경계에서 명시적으로 변환한다.

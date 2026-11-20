@@ -1,5 +1,7 @@
 package com.petfeed.gateway.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.gateway.exception.DownstreamException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,7 @@ public class GatewayController {
     @Value("${services.facade-service.url}")
     private String facadeServiceUrl;
 
-    @PostMapping("/api/v1/media")
+    @PostMapping(ApiPaths.API_V1 + "/media")
     public ResponseEntity<byte[]> upload(HttpServletRequest request) throws IOException {
         byte[] body = request.getInputStream().readNBytes(50 * 1024 * 1024 + 1);
         if (body.length > 50 * 1024 * 1024)
@@ -40,7 +42,7 @@ public class GatewayController {
         return proxy(request, body);
     }
 
-    @RequestMapping("/api/**")
+    @RequestMapping(ApiPaths.API_ROOT + "/**")
     public ResponseEntity<byte[]> proxy(HttpServletRequest request,
                                         @RequestBody(required = false) byte[] body) {
         String targetUrl = facadeServiceUrl + request.getRequestURI();

@@ -1,5 +1,7 @@
 package com.petfeed.gateway.security;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,8 +28,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/", "/ui", "/ui/**").permitAll()
                         // TODO 이 부분을 어떻게 처리해야할까
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/members/signup").permitAll()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.API_V1 + "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.API_V1 + "/members/signup").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

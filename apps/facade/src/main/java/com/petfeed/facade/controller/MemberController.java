@@ -1,5 +1,7 @@
 package com.petfeed.facade.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.contracts.dto.request.SignupRequest;
 import com.petfeed.contracts.dto.request.UpdateProfileRequest;
 import com.petfeed.contracts.dto.response.PostListResponse;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping(ApiPaths.API_V1)
 @RequiredArgsConstructor
 public class MemberController {
 

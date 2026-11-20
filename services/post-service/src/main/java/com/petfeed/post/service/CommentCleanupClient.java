@@ -1,5 +1,7 @@
 package com.petfeed.post.service;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -18,7 +20,7 @@ public class CommentCleanupClient {
     }
 
     public void close(Long postId) {
-        client.delete().uri("/internal/v1/posts/{id}/comments", postId)
+        client.delete().uri(ApiPaths.INTERNAL_V1 + "/posts/{id}/comments", postId)
                 .retrieve().toBodilessEntity();
     }
 }
