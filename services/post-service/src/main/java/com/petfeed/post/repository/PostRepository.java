@@ -11,6 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+    List<Post> findByDeletedFalseAndMemberKeyNotAndCreatedAtGreaterThanEqualOrderByIdDesc(
+            String memberKey, java.time.LocalDateTime since, Pageable pageable);
+    List<Post> findByIdInAndDeletedFalse(List<Long> ids);
     long countByMemberKeyAndDeletedFalse(String memberKey);
     List<Post> findByMemberKeyAndDeletedFalseOrderByIdDesc(String memberKey, Pageable pageable);
     List<Post> findByMemberKeyAndDeletedFalseAndIdLessThanOrderByIdDesc(String memberKey, Long cursor, Pageable pageable);

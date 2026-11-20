@@ -9,6 +9,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 
 @FeignClient(name = "post-service", url = "${services.post-service.url}")
 public interface PostFeignClient {
+    @GetMapping("/internal/v1/feed/candidates")
+    java.util.List<com.petfeed.contracts.dto.response.FeedCandidate> feedCandidates(@RequestParam("requester") String requester);
+
+    @PostMapping("/internal/v1/feed/posts")
+    java.util.List<PostDetailResponse> feedDetails(@RequestBody java.util.List<Long> ids);
 
     @PostMapping("/api/v1/posts")
     PostDetailResponse create(

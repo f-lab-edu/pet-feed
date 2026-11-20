@@ -25,6 +25,7 @@ class UiIntegrationTest {
     }
 
     @Test void openingUiDoesNotOpenProtectedApiRoutes() throws Exception {
+        mvc.perform(get("/api/v1/feed")).andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/media").contentType("image/png").content(new byte[]{1, 2, 3}))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/posts/1/media/test")).andExpect(status().isForbidden());
