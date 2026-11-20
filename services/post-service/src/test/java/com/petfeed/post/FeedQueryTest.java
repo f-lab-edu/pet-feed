@@ -29,10 +29,11 @@ class FeedQueryTest {
         posts.saveAndFlush(deleted);
         var old = posts.saveAndFlush(Post.create("other", "old", null));
         jdbc.update("update posts set created_at = ? where id = ?",
-                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusDays(31)), old.getId());
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now(java.time.Clock.systemDefaultZone()).minusDays(31)), old.getId());
         mvc.perform(get("/internal/v1/feed/candidates").param("requester", "viewer"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].postId").value(visible.getId()));
+                .andExpect(jsonPath("$[0].postId").value(visible.getId()))
+                .andExpect(jsonPath("$[0].createdAt").value(org.hamcrest.Matchers.endsWith("Z")));
         visible.markDeleted();
         posts.flush();
         mvc.perform(post("/internal/v1/feed/posts").contentType(MediaType.APPLICATION_JSON)

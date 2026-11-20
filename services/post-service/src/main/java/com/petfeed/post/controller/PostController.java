@@ -23,16 +23,16 @@ public class PostController {
     }
 
     @GetMapping(ApiPaths.API_V1 + "/posts/{id}")
-    public PostDetailResponse get(@PathVariable Long id) { return posts.get(id); }
+    public PostDetailResponse get(@PathVariable("id") Long id) { return posts.get(id); }
 
     @PutMapping(ApiPaths.API_V1 + "/posts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable Long id, @RequestHeader(X_MEMBER_KEY) String key,
+    public void update(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key,
                        @Valid @RequestBody SavePostRequest request) { posts.update(id, key, request); }
 
     @DeleteMapping(ApiPaths.API_V1 + "/posts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id, @RequestHeader(X_MEMBER_KEY) String key) { posts.delete(id, key); }
+    public void delete(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key) { posts.delete(id, key); }
 
     @GetMapping(ApiPaths.API_V1 + "/posts/count/{member-key}")
     public long count(@PathVariable("member-key") String key) { return posts.count(key); }

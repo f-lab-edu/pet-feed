@@ -149,6 +149,11 @@ async function api(path, method = 'GET', body) {
   }
   return data;
 }
+function feedDescription() {
+  if (state.mode === 'demo') return '함께 나누는 오늘의 순간';
+  if (state.target) return state.targetName ? `${state.targetName}님의 기록` : '회원의 기록';
+  return state.token ? '팔로우한 친구들의 소식과 새롭게 만나는 기록' : '로그인 후 새로운 기록을 만나보세요';
+}
 function syncChrome() {
   $('#mode-badge').textContent = state.mode === 'demo' ? '데모 모드' : '실제 API';
   $('#mode-button').textContent = state.mode === 'demo' ? '실제 API로 전환 ↗' : '데모 모드로 돌아가기 ↗';
@@ -158,7 +163,7 @@ function syncChrome() {
   $('#feed-title').textContent = state.target === me() ? '나의 기록 ☀' : '우리들의 기록 ☀';
   $('#home-button').classList.toggle('active', state.target !== me());
   $('#mine-button').classList.toggle('active', state.target === me());
-  $('#feed-description').textContent = state.mode === 'demo' ? '함께 나누는 오늘의 순간' : state.target ? (state.targetName ? `${state.targetName}님의 기록` : '회원의 기록') : state.token ? '팔로우한 친구들의 소식과 새롭게 만나는 기록' : '로그인 후 새로운 기록을 만나보세요';
+  $('#feed-description').textContent = feedDescription();
 }
 function renderPosts() {
   for (const url of feedMediaUrls) URL.revokeObjectURL(url);
@@ -177,6 +182,28 @@ function renderPosts() {
   $('#feed').querySelectorAll('img').forEach(img => img.addEventListener('error', () => { img.closest('.post-image').hidden = true; }));
   $('#feed').querySelectorAll('.load-attachment').forEach(button => button.addEventListener('click', () => loadAttachment(button)));
 }
+async function fetchPostPage(append, cursor) {
+  if (state.mode === 'demo') {
+    return {posts: demoData.posts.filter(post => !state.target || post.memberKey === state.target)
+      .sort((a,b) => b.postId - a.postId), next: null};
+  }
+  if (!state.token) return {posts: [], next: null, message: '실제 데이터를 보려면 로그인해 주세요.'};
+  if (!state.target) return fetchHomePage(append, cursor);
+  const memberPath = `/members/${encodeURIComponent(state.target)}`;
+  const [page, profile] = await Promise.all([
+    api(`${memberPath}/posts?cursor=${cursor}`),
+    api(memberPath).catch(() => null)
+  ]);
+  const posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
+  return {posts, next: page.hasNext ? page.nextCursor : null,
+    targetName: page.posts[0]?.author?.displayName || profile?.nickname || ''};
+}
+async function fetchHomePage(append, cursor) {
+  const path = append && cursor ? `/feed?cursor=${encodeURIComponent(cursor)}` : '/feed';
+  const page = await api(path);
+  return {posts: page.items.map(item => ({...item.post, commentCount: item.commentCount, feedSource: item.source})),
+    next: page.hasNext ? page.nextCursor : null};
+}
 async function loadPosts(append = false) {
   const generation = ++state.generation;
   const cursor = append ? state.cursor : 0;
@@ -186,34 +213,13 @@ async function loadPosts(append = false) {
   notice();
   syncChrome();
   try {
-    let posts, next;
-    if (state.mode === 'demo') {
-      posts = demoData.posts.filter(post => !state.target || post.memberKey === state.target).sort((a,b) => b.postId - a.postId);
-      next = null;
-    } else if (state.token && !state.target) {
-      const page = await api(append && cursor ? `/feed?cursor=${encodeURIComponent(cursor)}` : '/feed');
-      posts = page.items.map(item => ({...item.post, commentCount: item.commentCount, feedSource: item.source}));
-      next = page.hasNext ? page.nextCursor : null;
-    } else {
-      if (!state.token || !state.target) {
-        state.posts = []; state.cursor = null; renderPosts();
-        notice(state.token ? '조회할 회원 키를 입력해 주세요.' : '실제 데이터를 보려면 로그인해 주세요.');
-        return;
-      }
-      const target = encodeURIComponent(state.target);
-      const [page, profile] = await Promise.all([
-        api(`/members/${target}/posts?cursor=${cursor}`),
-        api(`/members/${target}`).catch(() => null)
-      ]);
-      if (generation !== state.generation) return;
-      state.targetName = page.posts[0]?.author?.displayName || profile?.nickname || '';
-      syncChrome();
-      posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
-      next = page.hasNext ? page.nextCursor : null;
-    }
+    const {posts, next, message, targetName} = await fetchPostPage(append, cursor);
     if (generation !== state.generation) return;
+    state.targetName = targetName || '';
+    syncChrome();
     state.posts = append ? [...state.posts, ...posts] : posts;
     state.cursor = next; state.commentPages.clear(); renderPosts();
+    if (message) notice(message);
   } catch (error) { if (generation === state.generation) { state.posts = []; state.cursor = null; renderPosts(); notice(error.message, true); } }
   finally { if (generation === state.generation) { $('#feed').setAttribute('aria-busy', 'false'); $('#more-posts').disabled = false; } }
 }

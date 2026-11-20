@@ -15,7 +15,7 @@ class FeedSessionsTest {
         var now = Instant.parse("2026-11-20T00:00:00Z");
         when(clock.instant()).thenReturn(now);
         var sessions = new FeedSessions(clock);
-        var ordered = IntStream.range(0, 25).mapToObj(i -> new FeedCandidate((long) i, "a", LocalDateTime.of(2026, 11, 20, 0, 0))).toList();
+        var ordered = IntStream.range(0, 25).mapToObj(i -> new FeedCandidate((long) i, "a", now)).toList();
         var page = sessions.create("owner", ordered, Set.of());
         assertThat(sessions.resume("owner", page.id() + ":10").snapshot()).isEqualTo(page.snapshot());
         assertThatThrownBy(() -> sessions.resume("other", page.id() + ":10"))

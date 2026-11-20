@@ -19,22 +19,22 @@ public class CommentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentResponse create(@PathVariable Long postId, @RequestHeader(X_MEMBER_KEY) String key,
+    public CommentResponse create(@PathVariable("postId") Long postId, @RequestHeader(X_MEMBER_KEY) String key,
                                   @Valid @RequestBody SaveCommentRequest request) { return comments.create(postId, key, request); }
 
     @GetMapping
-    public CommentListResponse list(@PathVariable Long postId,
+    public CommentListResponse list(@PathVariable("postId") Long postId,
                                     @RequestParam(name = "cursor", defaultValue = "0") Long cursor) { return comments.list(postId, cursor); }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable Long postId, @PathVariable Long id,
+    public void update(@PathVariable("postId") Long postId, @PathVariable("id") Long id,
                        @RequestHeader(X_MEMBER_KEY) String key, @Valid @RequestBody SaveCommentRequest request) {
         comments.update(postId, id, key, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long postId, @PathVariable Long id,
+    public void delete(@PathVariable("postId") Long postId, @PathVariable("id") Long id,
                        @RequestHeader(X_MEMBER_KEY) String key) { comments.delete(postId, id, key); }
 }
