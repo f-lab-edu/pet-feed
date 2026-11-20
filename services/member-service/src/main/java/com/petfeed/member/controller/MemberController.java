@@ -1,5 +1,7 @@
 package com.petfeed.member.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.contracts.dto.request.SignupRequest;
 import com.petfeed.contracts.dto.request.LoginRequest;
 import com.petfeed.contracts.dto.request.UpdateProfileRequest;
@@ -21,28 +23,28 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @GetMapping("/internal/v1/members/{member-key}/author")
+    @GetMapping(ApiPaths.INTERNAL_V1 + "/members/{member-key}/author")
     public AuthorResponse getAuthor(@PathVariable("member-key") String memberKey) {
         return memberService.getAuthor(memberKey);
     }
 
-    @PostMapping("/api/v1/members/signup")
+    @PostMapping(ApiPaths.API_V1 + "/members/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public SignupResponse signup(@RequestBody @Valid SignupRequest request) {
         return memberService.signup(request);
     }
 
-    @GetMapping("/api/v1/members/{member-key}")
+    @GetMapping(ApiPaths.API_V1 + "/members/{member-key}")
     public MemberInfoResponse getProfile(@PathVariable("member-key") String memberKey) {
         return memberService.getProfile(memberKey);
     }
 
-    @PostMapping("/api/v1/auth/login")
+    @PostMapping(ApiPaths.API_V1 + "/auth/login")
     public LoginResponse login(@RequestBody @Valid LoginRequest request) {
         return memberService.login(request);
     }
 
-    @PutMapping("/api/v1/members/{member-key}")
+    @PutMapping(ApiPaths.API_V1 + "/members/{member-key}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void update(@PathVariable("member-key") String memberKey,
                        @RequestHeader(X_MEMBER_KEY) String requesterKey,
@@ -50,7 +52,7 @@ public class MemberController {
         memberService.updateProfile(memberKey, requesterKey, request);
     }
 
-    @DeleteMapping("/api/v1/members/{member-key}")
+    @DeleteMapping(ApiPaths.API_V1 + "/members/{member-key}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("member-key") String memberKey,
                        @RequestHeader(X_MEMBER_KEY) String requesterKey) {

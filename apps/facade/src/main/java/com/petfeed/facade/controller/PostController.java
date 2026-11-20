@@ -1,5 +1,7 @@
 package com.petfeed.facade.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.contracts.dto.request.SavePostRequest;
 import com.petfeed.contracts.dto.response.PostDetailResponse;
 import jakarta.validation.Valid;
@@ -9,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
-@RequestMapping("/api/v1/posts")
+@RequestMapping(ApiPaths.API_V1 + "/posts")
 @RequiredArgsConstructor
 public class PostController {
     private final PostFacade posts;

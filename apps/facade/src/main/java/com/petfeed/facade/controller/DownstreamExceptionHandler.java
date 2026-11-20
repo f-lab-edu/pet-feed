@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class DownstreamExceptionHandler {
+
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<Void> handle(FeignException exception) {
         int status = exception.status();

@@ -1,5 +1,7 @@
 package com.petfeed.post.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.contracts.dto.request.SavePostRequest;
 import com.petfeed.contracts.dto.response.*;
 import com.petfeed.post.service.PostService;
@@ -14,28 +16,28 @@ import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 public class PostController {
     private final PostService posts;
 
-    @PostMapping("/api/v1/posts")
+    @PostMapping(ApiPaths.API_V1 + "/posts")
     @ResponseStatus(HttpStatus.CREATED)
     public PostDetailResponse create(@RequestHeader(X_MEMBER_KEY) String key, @Valid @RequestBody SavePostRequest request) {
         return posts.create(key, request);
     }
 
-    @GetMapping("/api/v1/posts/{id}")
-    public PostDetailResponse get(@PathVariable("id") Long id) { return posts.get(id); }
+    @GetMapping(ApiPaths.API_V1 + "/posts/{id}")
+    public PostDetailResponse get(@PathVariable Long id) { return posts.get(id); }
 
-    @PutMapping("/api/v1/posts/{id}")
+    @PutMapping(ApiPaths.API_V1 + "/posts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key,
+    public void update(@PathVariable Long id, @RequestHeader(X_MEMBER_KEY) String key,
                        @Valid @RequestBody SavePostRequest request) { posts.update(id, key, request); }
 
-    @DeleteMapping("/api/v1/posts/{id}")
+    @DeleteMapping(ApiPaths.API_V1 + "/posts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable("id") Long id, @RequestHeader(X_MEMBER_KEY) String key) { posts.delete(id, key); }
+    public void delete(@PathVariable Long id, @RequestHeader(X_MEMBER_KEY) String key) { posts.delete(id, key); }
 
-    @GetMapping("/api/v1/posts/count/{member-key}")
+    @GetMapping(ApiPaths.API_V1 + "/posts/count/{member-key}")
     public long count(@PathVariable("member-key") String key) { return posts.count(key); }
 
-    @GetMapping("/api/v1/members/{member-key}/posts")
+    @GetMapping(ApiPaths.API_V1 + "/members/{member-key}/posts")
     public PostListResponse list(@PathVariable("member-key") String key,
                                 @RequestParam(name = "cursor", defaultValue = "0") Long cursor) {
         return posts.list(key, cursor);

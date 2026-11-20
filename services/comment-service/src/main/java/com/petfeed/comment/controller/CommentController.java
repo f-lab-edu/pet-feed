@@ -1,5 +1,7 @@
 package com.petfeed.comment.controller;
 
+import com.petfeed.contracts.http.ApiPaths;
+
 import com.petfeed.comment.service.CommentService;
 import com.petfeed.contracts.dto.request.SaveCommentRequest;
 import com.petfeed.contracts.dto.response.CommentListResponse;
@@ -13,7 +15,7 @@ import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/posts/{postId}/comments")
+@RequestMapping(ApiPaths.API_V1 + "/posts/{postId}/comments")
 public class CommentController {
     private final CommentService comments;
 

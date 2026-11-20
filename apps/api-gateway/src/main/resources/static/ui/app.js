@@ -1,5 +1,6 @@
 /* Temporary client: demo data stays local; API requests use the Gateway origin. */
 'use strict';
+const API_V1 = '/api/v1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeImage = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } };
@@ -28,7 +29,7 @@ const feedMediaUrls = new Set();
 let editorBusy = false;
 
 async function fetchMedia(postId, mediaId) {
-  const response = await fetch(`/api/v1/posts/${postId}/media/${encodeURIComponent(mediaId)}`, {
+  const response = await fetch(`${API_V1}/posts/${postId}/media/${encodeURIComponent(mediaId)}`, {
     headers: {Authorization: `Bearer ${state.token}`}
   });
   if (!response.ok) throw new Error(response.status === 401 || response.status === 403
@@ -103,7 +104,7 @@ async function uploadAttachments() {
     const item = attachments[index];
     if (item.mediaId) continue;
     $('#upload-status').textContent = `첨부 업로드 중 ${index + 1} / ${attachments.length} · ${item.file.name}`;
-    const response = await fetch('/api/v1/media', {method: 'POST',
+    const response = await fetch(`${API_V1}/media`, {method: 'POST',
       headers: {Authorization: `Bearer ${state.token}`, 'Content-Type': item.type}, body: item.file});
     if (!response.ok) {
       const messages = {413: '파일이 너무 커요.', 415: '파일 형식을 확인해 주세요. JPEG·PNG·MP4 파일만 지원해요.', 401: '다시 로그인해 주세요.', 403: '파일 업로드 권한이 없어요.'};
@@ -126,7 +127,7 @@ function tokenKey(token) {
 state.memberKey = tokenKey(state.token);
 const me = () => state.mode === 'demo' ? 'demo-me' : state.memberKey;
 const saveDemo = () => persist(localStorage, 'petfeed-demo-v1', demoData);
-const nameOf = item => item.author?.displayName || item.memberKey || '이름 없는 친구';
+const nameOf = item => item.author?.displayName || '이름 없는 친구';
 function timeOf(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
@@ -138,12 +139,12 @@ async function api(path, method = 'GET', body) {
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   let response;
-  try { response = await fetch(`/api/v1${path}`, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)}); }
+  try { response = await fetch(`${API_V1}${path}`, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)}); }
   catch { throw new Error('서버에 연결할 수 없어요. Gateway와 각 서비스 실행 상태를 확인해 주세요.'); }
   const raw = await response.text();
   let data; try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
   if (!response.ok) {
-    const messages = {400: '입력 내용을 확인해 주세요.', 401: '로그인이 필요하거나 세션이 만료됐어요.', 403: '접근 권한이 없어요. 로그인 상태와 작성자를 확인해 주세요.', 404: '해당 기록이나 회원을 찾을 수 없어요.', 409: '이미 사용 중인 정보예요.'};
+    const messages = {400: '입력 내용을 확인해 주세요.', 401: '로그인이 필요하거나 세션이 만료됐어요.', 403: '접근 권한이 없어요. 로그인 상태와 작성자를 확인해 주세요.', 404: '해당 기록이나 회원을 찾을 수 없어요.', 409: '이미 사용 중인 정보예요.', 410: '피드가 만료됐어요. 새로고침으로 새로운 기록을 만나보세요.'};
     throw new Error(messages[response.status] || data?.detail || data?.message || `요청에 실패했어요. (${response.status})`);
   }
   return data;
@@ -153,11 +154,11 @@ function syncChrome() {
   $('#mode-button').textContent = state.mode === 'demo' ? '실제 API로 전환 ↗' : '데모 모드로 돌아가기 ↗';
   $('#account-button').textContent = state.mode === 'api' && state.token ? '로그아웃' : '로그인';
   $('#demo-note').textContent = state.mode === 'demo' ? '데모 기록은 이 브라우저에 저장돼요.' : '현재 Gateway의 실제 API를 사용해요.';
-  $('#member-key').value = state.target;
+  $('#member-key').value = state.target === me() ? '' : state.target;
   $('#feed-title').textContent = state.target === me() ? '나의 기록 ☀' : '우리들의 기록 ☀';
   $('#home-button').classList.toggle('active', state.target !== me());
   $('#mine-button').classList.toggle('active', state.target === me());
-  $('#feed-description').textContent = state.mode === 'demo' ? '함께 나누는 오늘의 순간' : state.target ? `회원 ${state.target}의 기록` : '로그인 후 내 기록을 확인해 보세요';
+  $('#feed-description').textContent = state.mode === 'demo' ? '함께 나누는 오늘의 순간' : state.target ? (state.targetName ? `${state.targetName}님의 기록` : '회원의 기록') : state.token ? '팔로우한 친구들의 소식과 새롭게 만나는 기록' : '로그인 후 새로운 기록을 만나보세요';
 }
 function renderPosts() {
   for (const url of feedMediaUrls) URL.revokeObjectURL(url);
@@ -179,6 +180,7 @@ function renderPosts() {
 async function loadPosts(append = false) {
   const generation = ++state.generation;
   const cursor = append ? state.cursor : 0;
+  if (!append) state.targetName = '';
   $('#feed').setAttribute('aria-busy', 'true');
   $('#more-posts').disabled = true;
   notice();
@@ -188,13 +190,24 @@ async function loadPosts(append = false) {
     if (state.mode === 'demo') {
       posts = demoData.posts.filter(post => !state.target || post.memberKey === state.target).sort((a,b) => b.postId - a.postId);
       next = null;
+    } else if (state.token && !state.target) {
+      const page = await api(append && cursor ? `/feed?cursor=${encodeURIComponent(cursor)}` : '/feed');
+      posts = page.items.map(item => ({...item.post, commentCount: item.commentCount, feedSource: item.source}));
+      next = page.hasNext ? page.nextCursor : null;
     } else {
       if (!state.token || !state.target) {
         state.posts = []; state.cursor = null; renderPosts();
         notice(state.token ? '조회할 회원 키를 입력해 주세요.' : '실제 데이터를 보려면 로그인해 주세요.');
         return;
       }
-      const page = await api(`/members/${encodeURIComponent(state.target)}/posts?cursor=${cursor}`);
+      const target = encodeURIComponent(state.target);
+      const [page, profile] = await Promise.all([
+        api(`/members/${target}/posts?cursor=${cursor}`),
+        api(`/members/${target}`).catch(() => null)
+      ]);
+      if (generation !== state.generation) return;
+      state.targetName = page.posts[0]?.author?.displayName || profile?.nickname || '';
+      syncChrome();
       posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
       next = page.hasNext ? page.nextCursor : null;
     }
@@ -375,7 +388,7 @@ $('#auth-form').addEventListener('submit', async event => {
       const response = await api('/auth/login', 'POST', body);
       const key = tokenKey(response.accessToken);
       if (!key) throw new Error('로그인 응답의 사용자 정보를 확인할 수 없어요.');
-      state.token = response.accessToken; state.memberKey = key; state.target = key; state.mode = 'api';
+      state.token = response.accessToken; state.memberKey = key; state.target = ''; state.mode = 'api';
       persist(sessionStorage, 'petfeed-token', state.token);
       $('#password').value = ''; $('#auth-dialog').close(); await loadPosts();
     }
@@ -386,12 +399,12 @@ $('#account-button').addEventListener('click', async () => {
   if (state.mode === 'api' && state.token) { state.token = ''; state.memberKey = ''; state.target = ''; persist(sessionStorage, 'petfeed-token', ''); await loadPosts(); }
   else openAuth();
 });
-$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = state.mode === 'demo' ? '' : state.memberKey; await loadPosts(); });
+$('#mode-button').addEventListener('click', async () => { state.mode = state.mode === 'demo' ? 'api' : 'demo'; state.target = ''; await loadPosts(); });
 $('#compose-button').addEventListener('click', () => openEditor('post'));
 $('#write-button').addEventListener('click', () => openEditor('post'));
 $('#refresh-button').addEventListener('click', () => loadPosts());
 $('#more-posts').addEventListener('click', () => loadPosts(true));
-$('#home-button').addEventListener('click', async () => { state.target = state.mode === 'demo' ? '' : me(); await loadPosts(); });
+$('#home-button').addEventListener('click', async () => { state.target = ''; await loadPosts(); });
 $('#mine-button').addEventListener('click', async () => { if (!canWrite()) return; state.target = me(); await loadPosts(); });
 $('#search-form').addEventListener('submit', async event => { event.preventDefault(); state.target = $('#member-key').value.trim(); await loadPosts(); });
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
