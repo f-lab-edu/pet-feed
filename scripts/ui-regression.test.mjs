@@ -117,3 +117,48 @@ test('expired feed gives a refresh instruction and clears the unusable cursor', 
   assert.match(app.node('#notice').textContent, /새로고침/);
   assert.equal(app.run('state.cursor'), null);
 });
+
+test('empty member feed uses the profile nickname and hides own key in search', async () => {
+  const app = boot(null);
+  app.setFetch(async url => ({ok: true, text: async () => JSON.stringify(
+    url.includes('/posts?') ? {posts: [], hasNext: false} : {nickname: '모카'}
+  )}));
+  app.run("state.mode = 'api'; state.memberKey = 'private-key'; state.token = 'token'");
+  await app.node('#mine-button').handlers.click();
+  assert.equal(app.node('#feed-description').textContent, '모카님의 기록');
+  assert.equal(app.node('#member-key').value, '');
+  assert.equal(app.run("nameOf({memberKey: 'private-key'})"), '이름 없는 친구');
+});
+
+test('late profile response cannot replace a newer home feed', async () => {
+  const app = boot(null);
+  let resolveProfile;
+  app.setFetch(async url => {
+    if (url === '/api/v1/members/member') {
+      return new Promise(resolve => { resolveProfile = resolve; });
+    }
+    const body = url.includes('/posts?') ? {posts: [], hasNext: false} : {items: [], hasNext: false};
+    return {ok: true, text: async () => JSON.stringify(body)};
+  });
+  app.run("state.mode = 'api'; state.memberKey = 'member'; state.token = 'token'");
+  const pending = app.node('#mine-button').handlers.click();
+  await app.node('#home-button').handlers.click();
+  resolveProfile({ok: true, text: async () => JSON.stringify({nickname: '늦은 응답'})});
+  await pending;
+  assert.equal(app.run('state.targetName'), '');
+  assert.match(app.node('#feed-description').textContent, /팔로우한 친구/);
+});
+
+test('profile failure still renders posts using their author display name', async () => {
+  const app = boot(null);
+  app.setFetch(async url => {
+    if (url === '/api/v1/members/member') throw new Error('Profile unavailable');
+    const post = {postId: 1, memberKey: 'member', content: '기록', author: {displayName: '모카'}};
+    const body = url.includes('/posts?') ? {posts: [post], hasNext: false} : post;
+    return {ok: true, text: async () => JSON.stringify(body)};
+  });
+  app.run("state.mode = 'api'; state.memberKey = 'member'; state.token = 'token'");
+  await app.node('#mine-button').handlers.click();
+  assert.equal(app.node('#feed-description').textContent, '모카님의 기록');
+  assert.equal(app.run('state.posts.length'), 1);
+});

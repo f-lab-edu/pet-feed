@@ -127,7 +127,7 @@ function tokenKey(token) {
 state.memberKey = tokenKey(state.token);
 const me = () => state.mode === 'demo' ? 'demo-me' : state.memberKey;
 const saveDemo = () => persist(localStorage, 'petfeed-demo-v1', demoData);
-const nameOf = item => item.author?.displayName || item.memberKey || '이름 없는 친구';
+const nameOf = item => item.author?.displayName || '이름 없는 친구';
 function timeOf(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
@@ -151,7 +151,7 @@ async function api(path, method = 'GET', body) {
 }
 function feedDescription() {
   if (state.mode === 'demo') return '함께 나누는 오늘의 순간';
-  if (state.target) return `회원 ${state.target}의 기록`;
+  if (state.target) return state.targetName ? `${state.targetName}님의 기록` : '회원의 기록';
   return state.token ? '팔로우한 친구들의 소식과 새롭게 만나는 기록' : '로그인 후 새로운 기록을 만나보세요';
 }
 function syncChrome() {
@@ -159,7 +159,7 @@ function syncChrome() {
   $('#mode-button').textContent = state.mode === 'demo' ? '실제 API로 전환 ↗' : '데모 모드로 돌아가기 ↗';
   $('#account-button').textContent = state.mode === 'api' && state.token ? '로그아웃' : '로그인';
   $('#demo-note').textContent = state.mode === 'demo' ? '데모 기록은 이 브라우저에 저장돼요.' : '현재 Gateway의 실제 API를 사용해요.';
-  $('#member-key').value = state.target;
+  $('#member-key').value = state.target === me() ? '' : state.target;
   $('#feed-title').textContent = state.target === me() ? '나의 기록 ☀' : '우리들의 기록 ☀';
   $('#home-button').classList.toggle('active', state.target !== me());
   $('#mine-button').classList.toggle('active', state.target === me());
@@ -189,9 +189,14 @@ async function fetchPostPage(append, cursor) {
   }
   if (!state.token) return {posts: [], next: null, message: '실제 데이터를 보려면 로그인해 주세요.'};
   if (!state.target) return fetchHomePage(append, cursor);
-  const page = await api(`/members/${encodeURIComponent(state.target)}/posts?cursor=${cursor}`);
+  const memberPath = `/members/${encodeURIComponent(state.target)}`;
+  const [page, profile] = await Promise.all([
+    api(`${memberPath}/posts?cursor=${cursor}`),
+    api(memberPath).catch(() => null)
+  ]);
   const posts = await Promise.all(page.posts.map(async summary => ({...summary, ...await api(`/posts/${summary.postId}`)})));
-  return {posts, next: page.hasNext ? page.nextCursor : null};
+  return {posts, next: page.hasNext ? page.nextCursor : null,
+    targetName: page.posts[0]?.author?.displayName || profile?.nickname || ''};
 }
 async function fetchHomePage(append, cursor) {
   const path = append && cursor ? `/feed?cursor=${encodeURIComponent(cursor)}` : '/feed';
@@ -202,13 +207,16 @@ async function fetchHomePage(append, cursor) {
 async function loadPosts(append = false) {
   const generation = ++state.generation;
   const cursor = append ? state.cursor : 0;
+  if (!append) state.targetName = '';
   $('#feed').setAttribute('aria-busy', 'true');
   $('#more-posts').disabled = true;
   notice();
   syncChrome();
   try {
-    const {posts, next, message} = await fetchPostPage(append, cursor);
+    const {posts, next, message, targetName} = await fetchPostPage(append, cursor);
     if (generation !== state.generation) return;
+    state.targetName = targetName || '';
+    syncChrome();
     state.posts = append ? [...state.posts, ...posts] : posts;
     state.cursor = next; state.commentPages.clear(); renderPosts();
     if (message) notice(message);

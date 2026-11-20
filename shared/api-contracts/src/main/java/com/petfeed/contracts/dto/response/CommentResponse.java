@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor(staticName = "of")
 public class CommentResponse {
+
     private Long commentId;
     private Long postId;
     private String memberKey;

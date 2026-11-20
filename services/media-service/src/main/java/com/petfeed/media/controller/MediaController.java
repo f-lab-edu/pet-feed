@@ -18,6 +18,7 @@ import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;
 @RequiredArgsConstructor
 @RequestMapping(ApiPaths.INTERNAL_V1 + "/media")
 public class MediaController {
+
     private final MediaService media;
 
     @PostMapping

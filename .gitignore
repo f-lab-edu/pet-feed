@@ -5,6 +5,7 @@
 *.ipr
 .vscode/
 .DS_Store
+/Microsoft/Windows/PowerShell/ModuleAnalysisCache
 
 # Gradle
 .gradle/

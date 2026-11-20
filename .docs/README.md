@@ -31,6 +31,8 @@
 
 ## 정책과 명세
 
+- [모듈 의존성 그래프](dependency-graph.md)
+
 - [홈 피드 알고리즘과 커서 정책](feed-algorithm.md)
 
 - [로컬 DB 영속화와 마이그레이션](database-persistence.md)
