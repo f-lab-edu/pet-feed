@@ -21,7 +21,7 @@ class FeedContractTest {
                 .willReturn(okJson("{\"status\":\"ACTIVE\",\"displayName\":\"friend\"}")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlPathEqualTo("/internal/v1/feed/candidates"))
                 .withQueryParam("requester", equalTo("feed-viewer"))
-                .willReturn(okJson("[{\"postId\":99,\"memberKey\":\"feed-author\",\"createdAt\":\"2026-11-20T12:00:00\"}]")));
+                .willReturn(okJson("[{\"postId\":99,\"memberKey\":\"feed-author\",\"createdAt\":\"2026-11-20T12:00:00Z\"}]")));
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlPathEqualTo("/internal/v1/follows/targets"))
                 .willReturn(okJson("[\"feed-author\"]")));
         stubFor(post(urlEqualTo("/internal/v1/feed/posts")).withRequestBody(equalToJson("[99]"))

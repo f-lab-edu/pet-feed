@@ -27,7 +27,7 @@ public class FeedSessions {
     }
 
     public synchronized Page resume(String owner, String cursor) {
-        if (cursor.length() > 64 || !cursor.matches("[0-9a-f-]{36}:[0-9]{1,3}"))
+        if (cursor.length() > 64 || !cursor.matches("[0-9a-f-]{36}:\\d{1,3}"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed cursor");
         var parts = cursor.split(":");
         var snapshot = sessions.get(parts[0]);

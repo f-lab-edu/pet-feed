@@ -18,13 +18,12 @@ class FeedFacadeTest {
 
     @Test void pagesDoNotReshuffleAndDeletedPostsAreNotServedFromSnapshot() {
         var now = LocalDateTime.of(2026, 11, 20, 0, 0);
-        var candidates = IntStream.rangeClosed(1, 25).mapToObj(i -> new FeedCandidate((long) i, "a" + i, now)).toList();
+        var candidates = IntStream.rangeClosed(1, 25).mapToObj(i -> new FeedCandidate((long) i, "a" + i, now.toInstant(java.time.ZoneOffset.UTC))).toList();
         when(members.getAuthor(anyString())).thenAnswer(call -> AuthorResponse.of(AuthorStatus.ACTIVE, call.getArgument(0)));
         when(posts.feedCandidates("viewer")).thenReturn(candidates);
         when(follows.targets(eq("viewer"), anyList())).thenReturn(Set.of("a1", "a2"));
-        var removed = new HashSet<Long>();
         when(posts.feedDetails(anyList())).thenAnswer(call -> ((List<Long>) call.getArgument(0)).stream()
-                .filter(id -> !removed.contains(id)).map(id -> PostDetailResponse.of(id, "a" + id, "content", null, now, now, null)).toList());
+                .map(id -> PostDetailResponse.of(id, "a" + id, "content", null, now, now, null)).toList());
         when(comments.counts(anyList())).thenReturn(Map.of(1L, 3L));
         var first = feed.get("viewer", null);
         var second = feed.get("viewer", first.nextCursor());
@@ -33,7 +32,9 @@ class FeedFacadeTest {
         var ids = new HashSet<Long>();
         first.items().forEach(item -> assertThat(ids.add(item.post().getPostId())).isTrue());
         second.items().forEach(item -> assertThat(ids.add(item.post().getPostId())).isTrue());
-        removed.add(second.items().getFirst().post().getPostId());
+        Long removedId = second.items().getFirst().post().getPostId();
+        when(posts.feedDetails(anyList())).thenAnswer(call -> ((List<Long>) call.getArgument(0)).stream()
+                .filter(id -> !id.equals(removedId)).map(id -> PostDetailResponse.of(id, "a" + id, "content", null, now, now, null)).toList());
         assertThat(feed.get("viewer", first.nextCursor()).items()).hasSize(9);
         var last = feed.get("viewer", second.nextCursor());
         assertThat(last.items()).hasSize(5);

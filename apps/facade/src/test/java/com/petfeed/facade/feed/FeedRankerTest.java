@@ -2,7 +2,8 @@ package com.petfeed.facade.feed;
 
 import com.petfeed.contracts.dto.response.FeedCandidate;
 import org.junit.jupiter.api.Test;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.*;
@@ -10,7 +11,7 @@ import static org.assertj.core.api.Assertions.*;
 class FeedRankerTest {
     private List<FeedCandidate> candidates() {
         return IntStream.rangeClosed(1, 100).mapToObj(i -> new FeedCandidate((long) i,
-                "author" + i, LocalDateTime.of(2026, 11, 20, 12, 0).minusMinutes(i))).toList();
+                "author" + i, Instant.parse("2026-11-20T12:00:00Z").minusSeconds(i * 60L))).toList();
     }
 
     @Test void mixesSevenFollowedAndThreeDiscoveriesWhenBothPoolsHaveCapacity() {
@@ -31,7 +32,7 @@ class FeedRankerTest {
     }
 
     @Test void preventsAdjacentAuthorsWhenAlternativesExistAndFallsBackWithoutLosingPosts() {
-        var now = LocalDateTime.of(2026, 11, 20, 12, 0);
+        var now = Instant.parse("2026-11-20T12:00:00Z");
         var pool = List.of(new FeedCandidate(1L, "a", now), new FeedCandidate(2L, "a", now),
                 new FeedCandidate(3L, "b", now), new FeedCandidate(4L, "b", now));
         var ranked = FeedRanker.rank(pool, Set.of("a", "b"), 1);
@@ -39,5 +40,17 @@ class FeedRankerTest {
         assertThat(ranked).containsExactlyInAnyOrderElementsOf(pool);
         assertThat(FeedRanker.rank(List.of(pool.getFirst(), pool.getFirst()), Set.of(), 1)).hasSize(1);
         assertThat(FeedRanker.rank(List.of(), Set.of(), 1)).isEmpty();
+    }
+
+    @Test void recencyUsesElapsedTimeAcrossOffsetsAndDaylightSavingTransition() {
+        var before = OffsetDateTime.parse("2026-03-08T01:30:00-05:00").toInstant();
+        var after = OffsetDateTime.parse("2026-03-08T03:30:00-04:00").toInstant();
+        var post = new FeedCandidate(1L, "a", before);
+        double random = 0.4 * new SplittableRandom(42L ^ 1L).nextDouble();
+        assertThat(FeedRanker.discoveryScore(post, after, 42))
+                .isCloseTo(0.6 * Math.exp(-(1.0 / 24) / 7) + random, within(1e-12));
+        var sameInstant = OffsetDateTime.parse("2026-03-08T15:30:00+09:00").toInstant();
+        assertThat(FeedRanker.discoveryScore(new FeedCandidate(1L, "a", sameInstant), after, 42))
+                .isEqualTo(FeedRanker.discoveryScore(post, after, 42));
     }
 }

@@ -24,7 +24,8 @@ public class FeedQueryController {
         if (requester.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         return posts.findByDeletedFalseAndMemberKeyNotAndCreatedAtGreaterThanEqualOrderByIdDesc(
                 requester, LocalDateTime.now(java.time.Clock.systemDefaultZone()).minusDays(30), PageRequest.of(0, 500))
-                .stream().map(p -> new FeedCandidate(p.getId(), p.getMemberKey(), p.getCreatedAt())).toList();
+                .stream().map(p -> new FeedCandidate(p.getId(), p.getMemberKey(),
+                        p.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())).toList();
     }
 
     @PostMapping("/posts")

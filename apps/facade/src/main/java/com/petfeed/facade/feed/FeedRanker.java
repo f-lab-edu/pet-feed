@@ -2,6 +2,7 @@ package com.petfeed.facade.feed;
 
 import com.petfeed.contracts.dto.response.FeedCandidate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /** A stable ordering for one browsing session. No database random sort. */
@@ -16,14 +17,23 @@ public final class FeedRanker {
         var discovery = new ArrayList<FeedCandidate>();
         var seen = new HashSet<Long>();
         for (var candidate : candidates) {
-            if (seen.add(candidate.postId())) (following.contains(candidate.memberKey()) ? followed : discovery).add(candidate);
+            if (!seen.add(candidate.postId())) continue;
+            var pool = following.contains(candidate.memberKey()) ? followed : discovery;
+            pool.add(candidate);
         }
         followed.sort(Comparator.comparing(FeedCandidate::createdAt).reversed()
                 .thenComparing(FeedCandidate::postId, Comparator.reverseOrder()));
-        discovery.sort(Comparator.<FeedCandidate>comparingDouble(p -> {
-            double ageDays = Math.max(0, Duration.between(p.createdAt(), newest).toSeconds()) / 86400.0;
-            return 0.6 * Math.exp(-ageDays / 7.0) + 0.4 * new SplittableRandom(seed ^ p.postId()).nextDouble();
-        }).reversed().thenComparing(FeedCandidate::postId));
+        discovery.sort(Comparator.<FeedCandidate>comparingDouble(p -> discoveryScore(p, newest, seed))
+                .reversed().thenComparing(FeedCandidate::postId));
+        return mix(followed, discovery);
+    }
+
+    static double discoveryScore(FeedCandidate post, Instant newest, long seed) {
+        double ageDays = Math.max(0, Duration.between(post.createdAt(), newest).toSeconds()) / 86400.0;
+        return 0.6 * Math.exp(-ageDays / 7.0) + 0.4 * new SplittableRandom(seed ^ post.postId()).nextDouble();
+    }
+
+    private static List<FeedCandidate> mix(List<FeedCandidate> followed, List<FeedCandidate> discovery) {
         var result = new ArrayList<FeedCandidate>();
         String previous = null;
         while (!followed.isEmpty() || !discovery.isEmpty()) {

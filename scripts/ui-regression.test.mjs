@@ -51,6 +51,7 @@ test('legacy posts and comments retain ownership, editing, deletion and persiste
   assert.equal(persisted.posts[0].memberKey, 'demo-me');
   assert.equal(persisted.comments[0].memberKey, 'demo-me');
   const reloaded = boot(persisted);
+  await reloaded.node('#refresh-button').handlers.click();
   assert.match(reloaded.node('#feed').innerHTML, /edited legacy post/);
   app.run('state.deletion = {postId: 7, commentId: null}');
   await app.node('#confirm-delete').handlers.click();
