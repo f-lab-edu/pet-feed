@@ -24,15 +24,15 @@ dependencyResolutionManagement {
 }
 
 // Shared 모듈 (공통 라이브러리)
-include ':common-domain'
-project(':common-domain').projectDir = file('shared/common-domain')
+include ':api-contracts'
+project(':api-contracts').projectDir = file('shared/api-contracts')
 
 include ':common-infrastructure'
 project(':common-infrastructure').projectDir = file('shared/common-infrastructure')
 
 // Services 모듈 (비즈니스 서비스)
-include ':user-service'
-project(':user-service').projectDir = file('services/user-service')
+include ':member-service'
+project(':member-service').projectDir = file('services/member-service')
 
 include ':post-service'
 project(':post-service').projectDir = file('services/post-service')

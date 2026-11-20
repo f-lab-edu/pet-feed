@@ -3,7 +3,7 @@ package com.petfeed.post;
 import com.petfeed.post.domain.Post;
 import com.petfeed.post.repository.*;
 import com.petfeed.post.service.*;
-import com.petfeed.domain.dto.request.SavePostRequest;
+import com.petfeed.contracts.dto.request.SavePostRequest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

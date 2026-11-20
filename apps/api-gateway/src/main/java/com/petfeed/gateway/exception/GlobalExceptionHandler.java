@@ -1,6 +1,6 @@
 package com.petfeed.gateway.exception;
 
-import com.petfeed.domain.exception.DownstreamException;
+import com.petfeed.gateway.exception.DownstreamException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

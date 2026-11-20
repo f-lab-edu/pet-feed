@@ -1,7 +1,7 @@
 package com.petfeed.follow.service;
 
-import com.petfeed.domain.dto.response.FollowEntry;
-import com.petfeed.domain.dto.response.FollowPage;
+import com.petfeed.contracts.dto.response.FollowEntry;
+import com.petfeed.contracts.dto.response.FollowPage;
 import com.petfeed.follow.domain.FollowRelation;
 import com.petfeed.follow.repository.FollowRepository;
 import lombok.RequiredArgsConstructor;

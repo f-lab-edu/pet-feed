@@ -1,0 +1,16 @@
+plugins {
+    id 'base-spring.data'
+    id 'base-spring.web'
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation 'org.springframework.security:spring-security-crypto'
+    // Shared 모듈
+    implementation project(':api-contracts')
+    implementation project(':common-infrastructure')
+
+    // Database
+    runtimeOnly 'com.h2database:h2'
+    implementation 'org.flywaydb:flyway-core'
+}

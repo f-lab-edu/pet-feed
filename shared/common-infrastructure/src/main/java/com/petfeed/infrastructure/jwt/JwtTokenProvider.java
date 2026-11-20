@@ -22,17 +22,17 @@ public class JwtTokenProvider {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String userKey) {
+    public String generateToken(String memberKey) {
         Date now = new Date();
         return Jwts.builder()
-                .subject(userKey)
+                .subject(memberKey)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs))
                 .signWith(secretKey)
                 .compact();
     }
 
-    public String getUserKey(String token) {
+    public String getMemberKey(String token) {
         return parseClaims(token).getSubject();
     }
 

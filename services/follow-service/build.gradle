@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation project(':common-domain')
+    implementation project(':api-contracts')
     runtimeOnly 'com.h2database:h2'
+    implementation 'org.flywaydb:flyway-core'
 }

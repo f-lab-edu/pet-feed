@@ -3,7 +3,7 @@ package com.petfeed.comment;
 import com.petfeed.comment.domain.Comment;
 import com.petfeed.comment.repository.*;
 import com.petfeed.comment.service.CommentService;
-import com.petfeed.domain.dto.request.SaveCommentRequest;
+import com.petfeed.contracts.dto.request.SaveCommentRequest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,26 +27,26 @@ class CommentIntegrationTest {
 
     @Test void lifecycleUsesPostIdWithoutPostDatabase() throws Exception {
         String path = "/api/v1/posts/12/comments";
-        mvc.perform(post(path).header("X-User-Key", "reader").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post(path).header("X-Member-Key", "reader").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"content\":\"hello\"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.postId").value(12));
         long id = comments.findAll().getFirst().getId();
-        mvc.perform(put(path + "/" + id).header("X-User-Key", "reader").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(path + "/" + id).header("X-Member-Key", "reader").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"content\":\"updated\"}")).andExpect(status().isNoContent());
         mvc.perform(get(path)).andExpect(jsonPath("$.comments[0].content").value("updated"));
-        mvc.perform(delete(path + "/" + id).header("X-User-Key", "reader")).andExpect(status().isNoContent());
+        mvc.perform(delete(path + "/" + id).header("X-Member-Key", "reader")).andExpect(status().isNoContent());
         assertThat(comments.existsById(id)).isFalse();
     }
 
     @Test void ownershipValidationAndPostIsolation() throws Exception {
         long id = comments.save(Comment.create(12L, "reader", "original")).getId();
         String path = "/api/v1/posts/12/comments";
-        mvc.perform(put(path + "/" + id).header("X-User-Key", "other").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(path + "/" + id).header("X-Member-Key", "other").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"content\":\"changed\"}")).andExpect(status().isForbidden());
-        mvc.perform(delete(path + "/" + id).header("X-User-Key", "other")).andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/posts/13/comments/" + id).header("X-User-Key", "reader")).andExpect(status().isNotFound());
+        mvc.perform(delete(path + "/" + id).header("X-Member-Key", "other")).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/v1/posts/13/comments/" + id).header("X-Member-Key", "reader")).andExpect(status().isNotFound());
         for (String content : new String[]{" ", "x".repeat(1001)}) {
-            mvc.perform(post(path).header("X-User-Key", "reader").contentType(MediaType.APPLICATION_JSON)
+            mvc.perform(post(path).header("X-Member-Key", "reader").contentType(MediaType.APPLICATION_JSON)
                     .content("{\"content\":\"" + content + "\"}")).andExpect(status().isBadRequest());
         }
         mvc.perform(get(path).param("cursor", "-1")).andExpect(status().isBadRequest());
@@ -71,7 +71,7 @@ class CommentIntegrationTest {
         comments.save(Comment.create(12L, "reader", "removed"));
         comments.save(Comment.create(13L, "reader", "retained"));
         for (int i = 0; i < 2; i++) mvc.perform(delete("/internal/v1/posts/12/comments")).andExpect(status().isNoContent());
-        mvc.perform(post("/api/v1/posts/12/comments").header("X-User-Key", "reader")
+        mvc.perform(post("/api/v1/posts/12/comments").header("X-Member-Key", "reader")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"late\"}")).andExpect(status().isNotFound());
         assertThat(comments.countByPostId(12L)).isZero();
         assertThat(comments.countByPostId(13L)).isEqualTo(1);

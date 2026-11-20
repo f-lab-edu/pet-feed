@@ -2,12 +2,12 @@ spring:
   application:
     name: media-service
   datasource:
-    url: jdbc:h2:mem:mediadb
+    url: ${MEDIA_DB_URL:jdbc:h2:file:./data/mediadb;DB_CLOSE_ON_EXIT=FALSE}
     username: sa
     password:
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
 server:
   port: 8086
 media:

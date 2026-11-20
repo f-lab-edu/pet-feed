@@ -18,7 +18,7 @@
 별도 터미널에서 아래 여섯 서비스를 실행한다. Gateway는 위 명령으로 실행해 둔다.
 
 ```powershell
-.\gradlew.bat :user-service:bootRun
+.\gradlew.bat :member-service:bootRun
 .\gradlew.bat :post-service:bootRun
 .\gradlew.bat :comment-service:bootRun
 .\gradlew.bat :follow-service:bootRun
@@ -37,7 +37,7 @@
 - 업로드는 실제 API 모드에서만 제공한다. 데모 모드에서는 파일 선택이 비활성화된다.
 - 같은 Gateway 출처로 요청하므로 별도 CORS 설정이나 프런트엔드 빌드가 필요 없다.
 - `/ui/**`의 GET만 익명에게 열고 기존 API 인증 정책은 유지한다. 프록시 경로는 `/api/**`로 제한했다.
-- 기존 H2 메모리 DB 설정으로 각 서비스 재시작 시 실제 데이터가 사라진다. 운영용 화면/인증 구현으로 확정한 것은 아니다.
+- H2 파일 DB를 사용하므로 같은 DB 경로로 재시작하면 실제 데이터를 유지한다. 실행 위치와 경로 설정은 [DB 영속화](../../.docs/database-persistence.md)를 따른다. 운영용 화면/인증 구현으로 확정한 것은 아니다.
 - media-service는 로컬 `media-storage`에 파일을 저장한다. `MEDIA_STORAGE_PATH`로 변경 가능하다. DB 재시작 후 남은 파일 및 작성 취소 파일의 자동 정리는 아직 없으며, 자세한 정책은 [미디어 명세](../../.docs/media-domain.md)를 따른다.
 
 ## 검증

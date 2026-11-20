@@ -19,31 +19,31 @@ class MemberCrudContractTest {
 
     @Test
     void signupReturnsCreated() throws Exception {
-        stubFor(post(urlEqualTo("/api/v1/users/signup")).willReturn(okJson("{\"userKey\":\"new-member\",\"createdAt\":\"2026-10-22T00:00:00\"}")));
-        mvc.perform(MockMvcRequestBuilders.post("/api/v1/users/signup").contentType(MediaType.APPLICATION_JSON)
+        stubFor(post(urlEqualTo("/api/v1/members/signup")).willReturn(okJson("{\"memberKey\":\"new-member\",\"createdAt\":\"2026-10-22T00:00:00\"}")));
+        mvc.perform(MockMvcRequestBuilders.post("/api/v1/members/signup").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"owner@example.com\",\"password\":\"secret123!\",\"phone\":\"01012345678\",\"nickname\":\"owner\"}"))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.userKey").value("new-member"));
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.memberKey").value("new-member"));
     }
 
     @Test
     void updateForwardsAuthenticatedRequesterAndBody() throws Exception {
-        stubFor(put(urlEqualTo("/api/v1/users/update-owner")).willReturn(noContent()));
-        mvc.perform(MockMvcRequestBuilders.put("/api/v1/users/update-owner").header("X-User-Key", "update-owner")
+        stubFor(put(urlEqualTo("/api/v1/members/update-owner")).willReturn(noContent()));
+        mvc.perform(MockMvcRequestBuilders.put("/api/v1/members/update-owner").header("X-Member-Key", "update-owner")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"bio\":\"new bio\"}"))
                 .andExpect(status().isNoContent());
-        verify(putRequestedFor(urlEqualTo("/api/v1/users/update-owner"))
-                .withHeader("X-User-Key", equalTo("update-owner"))
+        verify(putRequestedFor(urlEqualTo("/api/v1/members/update-owner"))
+                .withHeader("X-Member-Key", equalTo("update-owner"))
                 .withRequestBody(matchingJsonPath("$.bio", equalTo("new bio"))));
     }
 
     @Test
     void deleteForwardsAuthenticatedRequester() throws Exception {
-        stubFor(delete(urlEqualTo("/api/v1/users/delete-owner")).willReturn(noContent()));
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/users/delete-owner")
-                        .header("X-User-Key", "delete-owner"))
+        stubFor(delete(urlEqualTo("/api/v1/members/delete-owner")).willReturn(noContent()));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/members/delete-owner")
+                        .header("X-Member-Key", "delete-owner"))
                 .andExpect(status().isNoContent());
-        verify(deleteRequestedFor(urlEqualTo("/api/v1/users/delete-owner"))
-                .withHeader("X-User-Key", equalTo("delete-owner")));
+        verify(deleteRequestedFor(urlEqualTo("/api/v1/members/delete-owner"))
+                .withHeader("X-Member-Key", equalTo("delete-owner")));
     }
 
     @Test
@@ -52,9 +52,9 @@ class MemberCrudContractTest {
         mvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"owner@example.com\",\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized());
-        stubFor(delete(urlEqualTo("/api/v1/users/forbidden-owner")).willReturn(aResponse().withStatus(403)));
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/users/forbidden-owner")
-                        .header("X-User-Key", "other"))
+        stubFor(delete(urlEqualTo("/api/v1/members/forbidden-owner")).willReturn(aResponse().withStatus(403)));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/members/forbidden-owner")
+                        .header("X-Member-Key", "other"))
                 .andExpect(status().isForbidden());
     }
 }

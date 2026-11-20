@@ -10,7 +10,7 @@ class PostTest {
         var post = Post.create("owner", "before", "image");
         var createdAt = post.getCreatedAt();
         post.update("owner", "after", null);
-        assertThat(post.getUserKey()).isEqualTo("owner");
+        assertThat(post.getMemberKey()).isEqualTo("owner");
         assertThat(post.getCreatedAt()).isEqualTo(createdAt);
         assertThat(post.getContent()).isEqualTo("after");
         assertThat(post.getThumbnailUrl()).isNull();

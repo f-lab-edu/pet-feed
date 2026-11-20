@@ -8,7 +8,7 @@ server:
 services:
   media-service:
     url: http://localhost:8086
-  user-service:
+  member-service:
     url: http://localhost:8081
   post-service:
     url: http://localhost:8082

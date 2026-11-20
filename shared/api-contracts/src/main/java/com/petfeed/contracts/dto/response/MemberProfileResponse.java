@@ -1,0 +1,20 @@
+package com.petfeed.contracts.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor(staticName = "of")
+public class MemberProfileResponse {
+
+    private String nickname;
+    private String profileImageUrl;
+    private String bio;
+    private int followerCount;
+    private int followingCount;
+    @com.fasterxml.jackson.annotation.JsonProperty("following")
+    private boolean isFollowing;
+    private long postCount;
+}

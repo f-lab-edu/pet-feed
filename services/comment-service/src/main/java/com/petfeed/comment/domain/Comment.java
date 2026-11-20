@@ -15,8 +15,8 @@ public class Comment {
     private Long id;
     @Column(name = "post_id", nullable = false, updatable = false)
     private Long postId;
-    @Column(nullable = false, updatable = false)
-    private String userKey;
+    @Column(name = "user_key", nullable = false, updatable = false)
+    private String memberKey;
     @Column(nullable = false, length = 1000)
     private String content;
     @Column(nullable = false, updatable = false)
@@ -31,14 +31,14 @@ public class Comment {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author is required");
         Comment comment = new Comment();
         comment.postId = postId;
-        comment.userKey = key;
+        comment.memberKey = key;
         comment.createdAt = LocalDateTime.now();
         comment.replace(content);
         return comment;
     }
 
     public void requireOwner(String key) {
-        if (!userKey.equals(key))
+        if (!memberKey.equals(key))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the author can change this comment");
     }
 

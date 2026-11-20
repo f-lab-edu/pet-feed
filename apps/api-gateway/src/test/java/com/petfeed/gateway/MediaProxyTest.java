@@ -37,10 +37,10 @@ class MediaProxyTest {
         ReflectionTestUtils.setField(gateway, "facadeServiceUrl", "http://facade");
         var request = new MockHttpServletRequest("POST", "/api/v1/media");
         request.setContentType("image/png");
-        request.addHeader("X-User-Key", "owner");
+        request.addHeader("X-Member-Key", "owner");
         request.setContent(new byte[]{1, 2, 3});
         server.expect(requestTo("http://facade/api/v1/media"))
-                .andExpect(method(HttpMethod.POST)).andExpect(header("X-User-Key", "owner"))
+                .andExpect(method(HttpMethod.POST)).andExpect(header("X-Member-Key", "owner"))
                 .andExpect(content().bytes(new byte[]{1, 2, 3}))
                 .andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body("{\"mediaId\":\"id\"}"));
         assertThat(gateway.upload(request).getStatusCode()).isEqualTo(HttpStatus.CREATED);
