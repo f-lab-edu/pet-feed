@@ -3,7 +3,6 @@ package com.petfeed.facade.controller;
 import com.petfeed.contracts.http.ApiPaths;
 
 import com.petfeed.contracts.dto.response.FeedResponse;
-import com.petfeed.facade.feed.FeedFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import static com.petfeed.contracts.http.MyHttpHeaders.X_MEMBER_KEY;

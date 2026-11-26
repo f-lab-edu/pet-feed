@@ -2,6 +2,7 @@ package com.petfeed.facade.feed;
 
 import com.petfeed.contracts.dto.response.*;
 import com.petfeed.facade.client.*;
+import com.petfeed.facade.controller.FeedFacade;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.*;

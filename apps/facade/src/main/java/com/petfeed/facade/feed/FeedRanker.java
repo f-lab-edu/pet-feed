@@ -5,26 +5,37 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
-/** A stable ordering for one browsing session. No database random sort. */
+
 public final class FeedRanker {
+
     private FeedRanker() {}
     private static final Set<Integer> DISCOVERY_SLOTS = Set.of(2, 5, 8);
 
     public static List<FeedCandidate> rank(List<FeedCandidate> candidates, Set<String> following, long seed) {
-        if (candidates.isEmpty()) return List.of();
-        var newest = candidates.stream().map(FeedCandidate::createdAt).max(Comparator.naturalOrder()).orElseThrow();
+        if (candidates.isEmpty())
+            return List.of();
+
+        var newest = candidates.stream()
+                .map(FeedCandidate::createdAt)
+                .max(Comparator.naturalOrder()).orElseThrow();
+
         var followed = new ArrayList<FeedCandidate>();
         var discovery = new ArrayList<FeedCandidate>();
         var seen = new HashSet<Long>();
+
         for (var candidate : candidates) {
-            if (!seen.add(candidate.postId())) continue;
+            if (!seen.add(candidate.postId()))
+                continue;
             var pool = following.contains(candidate.memberKey()) ? followed : discovery;
             pool.add(candidate);
         }
+
         followed.sort(Comparator.comparing(FeedCandidate::createdAt).reversed()
                 .thenComparing(FeedCandidate::postId, Comparator.reverseOrder()));
+
         discovery.sort(Comparator.<FeedCandidate>comparingDouble(p -> discoveryScore(p, newest, seed))
                 .reversed().thenComparing(FeedCandidate::postId));
+
         return mix(followed, discovery);
     }
 
@@ -36,15 +47,20 @@ public final class FeedRanker {
     private static List<FeedCandidate> mix(List<FeedCandidate> followed, List<FeedCandidate> discovery) {
         var result = new ArrayList<FeedCandidate>();
         String previous = null;
+
         while (!followed.isEmpty() || !discovery.isEmpty()) {
+
             var preferred = DISCOVERY_SLOTS.contains(result.size() % 10) ? discovery : followed;
             var fallback = preferred == discovery ? followed : discovery;
             var selected = takeDifferent(preferred, previous);
+
             if (selected == null) selected = takeDifferent(fallback, previous);
             if (selected == null) selected = (preferred.isEmpty() ? fallback : preferred).removeFirst();
+
             result.add(selected);
             previous = selected.memberKey();
         }
+
         return List.copyOf(result);
     }
 
